@@ -20,6 +20,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: read
+      security-events: write
 
     steps:
       - name: Checkout repository
@@ -52,7 +54,7 @@ jobs:
         id: scan
         uses: crazy-max/ghaction-container-scan@v3
         with:
-          image: ${{ steps.meta.outputs.tags }}
+          image: ghcr.io/pacwilliams/todo-app:latest
           dockerfile: ./Dockerfile
 
       - name: Upload SARIF file
