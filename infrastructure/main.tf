@@ -5,7 +5,7 @@ resource "azurerm_resource_group" "rg" {
 
 # Virtual Network
 resource "azurerm_virtual_network" "my_terraform_network" {
-  name                = "${azure_resource_group.rg.name}-vnet"
+  name                = "${azurerm_resource_group.rg.name}-vnet"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -31,7 +31,7 @@ resource "azurerm_subnet" "subnet_2" {
 
 # Create public IPs
 resource "azurerm_public_ip" "my_terraform_public_ip" {
-  name                = "${azure_resource_group.rg.name}-PublicIP"
+  name                = "${azurerm_resource_group.rg.name}-PublicIP"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Static"
@@ -39,7 +39,7 @@ resource "azurerm_public_ip" "my_terraform_public_ip" {
 
 # Create Network Security Group and rule
 resource "azurerm_network_security_group" "my_terraform_nsg" {
-  name                = "${azure_resource_group.rg.name}-NSG"
+  name                = "${azurerm_resource_group.rg.name}-NSG"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -58,12 +58,12 @@ resource "azurerm_network_security_group" "my_terraform_nsg" {
 
 # Create network interface
 resource "azurerm_network_interface" "my_terraform_nic" {
-  name                = "${azure_resource_group.rg.name}-NIC"
+  name                = "${azurerm_resource_group.rg.name}-NIC"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
   ip_configuration {
-    name                          = "${azure_resource_group.rg.name}_nic_configuration"
+    name                          = "${azurerm_resource_group.rg.name}_nic_configuration"
     subnet_id                     = azurerm_subnet.subnet_2.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.my_terraform_public_ip.id
@@ -79,7 +79,7 @@ resource "azurerm_network_interface_security_group_association" "example" {
 
 # Create storage account for boot diagnostics
 resource "azurerm_storage_account" "my_storage_account" {
-  name                     = "diag-${azure_resource_group.rg.name}"
+  name                     = "diag-${azurerm_resource_group.rg.name}"
   location                 = azurerm_resource_group.rg.location
   resource_group_name      = azurerm_resource_group.rg.name
   account_tier             = "Standard"
@@ -88,14 +88,14 @@ resource "azurerm_storage_account" "my_storage_account" {
 
 # Create virtual machine
 resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
-  name                  = "${azure_resource_group.rg.name}-VM"
+  name                  = "${azurerm_resource_group.rg.name}-VM"
   location              = azurerm_resource_group.rg.location
   resource_group_name   = azurerm_resource_group.rg.name
   network_interface_ids = [azurerm_network_interface.my_terraform_nic.id]
   size                  = "Standard_DS1_v2"
 
   os_disk {
-    name                 = "${azure_resource_group.rg.name}-OsDisk"
+    name                 = "${azurerm_resource_group.rg.name}-OsDisk"
     caching              = "ReadWrite"
     storage_account_type = "Premium_LRS"
   }
@@ -121,7 +121,7 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
 }
 
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
-  name                = "${azure_resource_group.rg.name}-aks"
+  name                = "${azurerm_resource_group.rg.name}-aks"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   dns_prefix          = "pwakscluster"
