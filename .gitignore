@@ -22,3 +22,7 @@ Makefile
 deploy
 test
 tmp
+
+**/.terraform
+terraform.tfstate
+.terraform.lock.hcl
