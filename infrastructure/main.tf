@@ -196,7 +196,8 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     min_count            = 1
     vm_size              = "Standard_DS2_v2"
     auto_scaling_enabled = true
-    vnet_subnet_id = "azurerm_subnet.subnet_1.id"
+    node_public_ip_enabled = false
+    vnet_subnet_id = azurerm_subnet.subnet_1.id
     upgrade_settings {
       drain_timeout_in_minutes      = 90
       max_surge                     = "10%"
