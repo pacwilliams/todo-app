@@ -67,17 +67,6 @@ resource "azurerm_network_security_group" "my_terraform_nsg" {
     destination_address_prefix = "10.0.2.0/24"
   }
 
-  security_rule {
-    name                       = "DenyAllInbound"
-    priority                   = 300
-    direction                  = "Inbound"
-    access                     = "Deny"
-    protocol                   = "*"
-    source_port_range          = "*"
-    destination_port_range     = "*"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
 
 }
 
@@ -142,7 +131,7 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
     version   = "latest"
   }
 
-  computer_name                   = "Wiz-Exercise-MongoDB"
+  computer_name                   = "wiz-exercise-mongodb"
   admin_username                  = var.username
   disable_password_authentication = true
 
@@ -207,6 +196,7 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     min_count            = 1
     vm_size              = "Standard_DS2_v2"
     auto_scaling_enabled = true
+    vnet_subnet_id = "azurerm_subnet.subnet_1.id"
     upgrade_settings {
       drain_timeout_in_minutes      = 90
       max_surge                     = "10%"
