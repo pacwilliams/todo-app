@@ -39,13 +39,13 @@ resource "azurerm_public_ip" "my_terraform_public_ip" {
 
 # Create Network Security Group and rule
 resource "azurerm_network_security_group" "my_terraform_nsg" {
-  name                = "${azurerm_resource_group.rg.name}-NSG"
+  name                = "${azurerm_resource_group.rg.name}-ExternalNSG"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
   security_rule {
     name                       = "SSH"
-    priority                   = 1001
+    priority                   = 200
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
@@ -54,6 +54,31 @@ resource "azurerm_network_security_group" "my_terraform_nsg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+
+  security_rule {
+    name                       = "Allow_MongoDB"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "27017"
+    source_address_prefix      = "10.0.1.0/24"
+    destination_address_prefix = "10.0.2.0/24"
+  }
+
+  security_rule {
+    name                       = "DenyAllInbound"
+    priority                   = 300
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
 }
 
 # Create network interface
@@ -78,12 +103,22 @@ resource "azurerm_network_interface_security_group_association" "example" {
 
 
 # Create storage account for boot diagnostics
-resource "azurerm_storage_account" "my_storage_account" {
+resource "azurerm_storage_account" "sa" {
   name                     = "odl1986716"
   location                 = azurerm_resource_group.rg.location
   resource_group_name      = azurerm_resource_group.rg.name
   account_tier             = "Standard"
   account_replication_type = "LRS"
+}
+
+resource "azurerm_management_lock" "sa_lock" {
+  name       = "storage-delete-lock"
+  scope      = azurerm_storage_account.sa.id
+  lock_level = "CanNotDelete"
+  notes      = "Prevent accidental deletion of storage account"
+
+  # Ensure the lock is destroyed before the storage account
+  depends_on = [azurerm_storage_account.sa]
 }
 
 # Create virtual machine
@@ -97,18 +132,19 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
   os_disk {
     name                 = "${azurerm_resource_group.rg.name}-OsDisk"
     caching              = "ReadWrite"
-    storage_account_type = "Premium_LRS"
+    storage_account_type = "Standard_LRS"
   }
 
   source_image_reference {
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts-gen2"
+    sku       = "22_04-lts"
     version   = "latest"
   }
 
-  computer_name  = "MongoDB"
+  computer_name  = "Wiz-Exercise-MongoDB"
   admin_username = var.username
+  disable_password_authentication = true
 
   admin_ssh_key {
     username   = var.username
@@ -118,6 +154,43 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
   boot_diagnostics {
     storage_account_uri = azurerm_storage_account.my_storage_account.primary_blob_endpoint
   }
+
+  custom_data = base64encode(<<EOF
+  #!/bin/bash
+  sudo apt-get update
+  sudo apt-get install gnupg curl
+  curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+  sudo touch /etc/apt/sources.list.d/mongodb-org-7.0.list
+  echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+  sudo apt-get update
+  sudo apt-get install -y \
+   mongodb-org=7.0.24 \
+   mongodb-org-database=7.0.24 \
+   mongodb-org-server=7.0.24 \
+   mongodb-mongosh \
+   mongodb-org-shell=7.0.24 \
+   mongodb-org-mongos=7.0.24 \
+   mongodb-org-tools=7.0.24 \
+   mongodb-org-database-tools-extra=7.0.24
+  echo "mongodb-org hold" | sudo dpkg --set-selections
+  echo "mongodb-org-database hold" | sudo dpkg --set-selections
+  echo "mongodb-org-server hold" | sudo dpkg --set-selections
+  echo "mongodb-mongosh hold" | sudo dpkg --set-selections
+  echo "mongodb-org-mongos hold" | sudo dpkg --set-selections
+  echo "mongodb-org-tools hold" | sudo dpkg --set-selections
+  echo "mongodb-org-database-tools-extra hold" | sudo dpkg --set-selections
+  sudo systemctl start mongod
+  sudo systemctl status mongod
+  sudo systemctl enable mongod
+  EOF
+  )
+}
+
+resource "azurerm_container_registry" "acr" {
+  name                = "${azurerm_resource_group.rg.name}-acr"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  sku                 = "Basic"
 }
 
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
@@ -153,4 +226,11 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   tags = {
     Environment = "Production"
   }
+}
+
+resource "azurerm_role_assignment" "aks_role" {
+  principal_id                     = azurerm_kubernetes_cluster.aks_cluster.kubelet_identity[0].object_id
+  role_definition_name             = "AcrPull"
+  scope                            = azurerm_container_registry.acr.id
+  skip_service_principal_aad_check = true
 }
