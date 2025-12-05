@@ -155,33 +155,33 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
     storage_account_uri = azurerm_storage_account.sa.primary_blob_endpoint
   }
 
-  custom_data = base64encode(<<EOF
-  #!/bin/bash
-  sudo apt-get update
-  sudo apt-get install gnupg curl
-  curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
-  sudo touch /etc/apt/sources.list.d/mongodb-org-7.0.list
-  echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
-  sudo apt-get update
-  sudo apt-get install -y \
-   mongodb-org=7.0.24 \
-   mongodb-org-database=7.0.24 \
-   mongodb-org-server=7.0.24 \
-   mongodb-mongosh \
-   mongodb-org-shell=7.0.24 \
-   mongodb-org-mongos=7.0.24 \
-   mongodb-org-tools=7.0.24 \
-   mongodb-org-database-tools-extra=7.0.24
-  echo "mongodb-org hold" | sudo dpkg --set-selections
-  echo "mongodb-org-database hold" | sudo dpkg --set-selections
-  echo "mongodb-org-server hold" | sudo dpkg --set-selections
-  echo "mongodb-mongosh hold" | sudo dpkg --set-selections
-  echo "mongodb-org-mongos hold" | sudo dpkg --set-selections
-  echo "mongodb-org-tools hold" | sudo dpkg --set-selections
-  echo "mongodb-org-database-tools-extra hold" | sudo dpkg --set-selections
-  sudo systemctl start mongod
-  sudo systemctl status mongod
-  sudo systemctl enable mongod
+  custom_data = base64encode(<<-EOF
+    #!/bin/bash
+    set -e
+    sudo apt-get update -y
+    sudo apt-get install -y gnupg curl
+    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+    sudo apt-get update
+    sudo apt-get install -y \
+    mongodb-org=7.0.24 \
+    mongodb-org-database=7.0.24 \
+    mongodb-org-server=7.0.24 \
+    mongodb-mongosh \
+    mongodb-org-shell=7.0.24 \
+    mongodb-org-mongos=7.0.24 \
+    mongodb-org-tools=7.0.24 \
+    mongodb-org-database-tools-extra=7.0.24
+    echo "mongodb-org hold" | sudo dpkg --set-selections
+    echo "mongodb-org-database hold" | sudo dpkg --set-selections
+    echo "mongodb-org-server hold" | sudo dpkg --set-selections
+    echo "mongodb-mongosh hold" | sudo dpkg --set-selections
+    echo "mongodb-org-mongos hold" | sudo dpkg --set-selections
+    echo "mongodb-org-tools hold" | sudo dpkg --set-selections
+    echo "mongodb-org-database-tools-extra hold" | sudo dpkg --set-selections
+    sudo systemctl start mongod
+    sudo systemctl enable mongod
+    sudo systemctl is-active mongod
   EOF
   )
 }
