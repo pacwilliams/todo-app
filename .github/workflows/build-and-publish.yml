@@ -38,14 +38,14 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - run: |
-          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/todoapp:${{ github.sha }}
-          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/todoapp:${{ github.sha }}
+          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/todoapp:latest
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/todoapp:latest
                
       - name: Scan for vulnerabilities
         id: scan
         uses: crazy-max/ghaction-container-scan@v3
         with:
-          image: ${{ secrets.REGISTRY_LOGIN_SERVER }}/todoapp:${{ github.sha }}
+          image: ${{ secrets.REGISTRY_LOGIN_SERVER }}/todoapp:latest
           dockerfile: ./Dockerfile
 
       - name: Upload SARIF file
@@ -53,4 +53,42 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: ${{ steps.scan.outputs.sarif }}
+
+      - name: Set AKS context
+        id: set-context
+        uses: azure/aks-set-context@v4.0.3
+        with:
+          resource-group: '${{ secrets.RESOURCE_GROUP }}' 
+          cluster-name: '${{ secrets.CLUSTER_NAME }}'
+
+      - name: Setup kubectl
+        id: install-kubectl
+        uses: azure/setup-kubectl@v4.0.1
+
+      - name: Create Secret
+        uses: azure/k8s-create-secret@v5.0.1
+        with:
+          namespace: default
+          secret-name: mongodb-secrets
+          secret-type: generic
+          data: ${{ secrets.MONGODB_URI }}
+
+      - name: Create Secret
+        uses: azure/k8s-create-secret@v5.0.1
+        with:
+          namespace: default
+          secret-name: secret-key
+          secret-type: generic
+          data: ${{ secrets.SECRET_KEY }}
+
+      - name: Deploy to AKS
+        id: deploy-aks
+        uses: Azure/k8s-deploy@v5.0.4
+        with:
+          namespace: 'default'
+          manifests: |
+             deployment.yaml
+          images: '${{ secrets.REGISTRY_LOGIN_SERVER }}/todoapp:latest'
+          pull-images: false 
+
 
