@@ -20,12 +20,12 @@ resource "azurerm_subnet" "subnet_1" {
 }
 
 resource "azurerm_subnet" "subnet_2" {
-  name                 = "subnet-2"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.my_terraform_network.name
-  address_prefixes     = ["10.0.2.0/24"]
-    default_outbound_access_enabled = false
-    service_endpoints = ["Microsoft.Storage"]
+  name                            = "subnet-2"
+  resource_group_name             = azurerm_resource_group.rg.name
+  virtual_network_name            = azurerm_virtual_network.my_terraform_network.name
+  address_prefixes                = ["10.0.2.0/24"]
+  default_outbound_access_enabled = false
+  service_endpoints               = ["Microsoft.Storage"]
 }
 
 
@@ -142,8 +142,8 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
     version   = "latest"
   }
 
-  computer_name  = "Wiz-Exercise-MongoDB"
-  admin_username = var.username
+  computer_name                   = "Wiz-Exercise-MongoDB"
+  admin_username                  = var.username
   disable_password_authentication = true
 
   admin_ssh_key {
@@ -187,7 +187,7 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
 }
 
 resource "azurerm_container_registry" "acr" {
-  name                = "todoacr"
+  name                = "odl1986716"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "Basic"
