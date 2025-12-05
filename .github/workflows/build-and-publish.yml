@@ -71,7 +71,7 @@ jobs:
           namespace: default
           secret-name: mongodb-secrets
           secret-type: generic
-          data: ${{ secrets.MONGODB_URI }}
+          string-data: ${{ secrets.MONGODB_URI }}
 
       - name: Create Secret
         uses: azure/k8s-create-secret@v5.0.1
@@ -79,7 +79,7 @@ jobs:
           namespace: default
           secret-name: secret-key
           secret-type: generic
-          data: ${{ secrets.SECRET_KEY }}
+          string-data: ${{ secrets.SECRET_KEY }}
 
       - name: Deploy to AKS
         id: deploy-aks
