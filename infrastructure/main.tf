@@ -17,7 +17,7 @@ resource "azurerm_subnet" "subnet_1" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.my_terraform_network.name
   address_prefixes     = ["10.0.1.0/24"]
-  service_endpoints = ["Microsoft.Storage","Microsoft.KeyVault"]
+  service_endpoints    = ["Microsoft.Storage", "Microsoft.KeyVault"]
 }
 
 resource "azurerm_subnet" "subnet_2" {
@@ -26,7 +26,7 @@ resource "azurerm_subnet" "subnet_2" {
   virtual_network_name            = azurerm_virtual_network.my_terraform_network.name
   address_prefixes                = ["10.0.2.0/24"]
   default_outbound_access_enabled = false
-  service_endpoints               = ["Microsoft.Storage","Microsoft.KeyVault"]
+  service_endpoints               = ["Microsoft.Storage", "Microsoft.KeyVault"]
 }
 
 
@@ -218,7 +218,7 @@ resource "azurerm_network_security_group" "aks_nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "443"
-    source_address_prefix      = "*" 
+    source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
 }
@@ -279,7 +279,7 @@ resource "helm_release" "cert_manager" {
   namespace        = "cert-manager"
   create_namespace = true
 
-    values = [
+  values = [
     <<EOF
 installCRDs: true
 EOF
@@ -308,13 +308,13 @@ resource "kubernetes_manifest" "letsencrypt_issuer" {
             ingress = {
               class = "nginx"
             }
-          }}]
-        }
+        } }]
       }
     }
-    depends_on = [helm_release.cert_manager]
   }
-  
+  depends_on = [helm_release.cert_manager]
+}
+
 resource "kubernetes_manifest" "backend_cert" {
   manifest = {
     apiVersion = "cert-manager.io/v1"

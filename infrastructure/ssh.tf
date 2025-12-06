@@ -6,20 +6,20 @@ resource "random_pet" "ssh_key_name" {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "kv" {
-  name                = "odl1986716KeyVault"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  sku_name            = "standard"
-  rbac_authorization_enabled = true
-  soft_delete_retention_days = 7
+  name                          = "odl1986716KeyVault"
+  location                      = azurerm_resource_group.rg.location
+  resource_group_name           = azurerm_resource_group.rg.name
+  tenant_id                     = data.azurerm_client_config.current.tenant_id
+  sku_name                      = "standard"
+  rbac_authorization_enabled    = true
+  soft_delete_retention_days    = 7
   public_network_access_enabled = true
 }
 
 resource "azurerm_role_assignment" "kv_secrets_user" {
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
-  principal_id         = "8659ba1e-7d54-46a4-975b-9aebf6a33a57" 
+  principal_id         = "8659ba1e-7d54-46a4-975b-9aebf6a33a57"
 }
 
 resource "azurerm_role_assignment" "kv_admin" {
@@ -48,7 +48,7 @@ resource "azapi_resource_action" "ssh_public_key_gen" {
 
   response_export_values = ["publicKey", "privateKey"]
 
-  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment]
+  depends_on = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
 }
 
 resource "azapi_resource" "ssh_public_key" {
@@ -57,7 +57,7 @@ resource "azapi_resource" "ssh_public_key" {
   location  = azurerm_resource_group.rg.location
   parent_id = azurerm_resource_group.rg.id
 
-  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment]
+  depends_on = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
 }
 
 # Store the generated public key
@@ -65,7 +65,7 @@ resource "azurerm_key_vault_secret" "ssh_public_key" {
   name         = "vm-ssh-public-key"
   value        = azapi_resource_action.ssh_public_key_gen.output.publicKey
   key_vault_id = azurerm_key_vault.kv.id
-  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment]
+  depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
 }
 
 # Store the generated private key
@@ -73,5 +73,5 @@ resource "azurerm_key_vault_secret" "ssh_private_key" {
   name         = "vm-ssh-private-key"
   value        = azapi_resource_action.ssh_public_key_gen.output.privateKey
   key_vault_id = azurerm_key_vault.kv.id
-  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment]
+  depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
 }
