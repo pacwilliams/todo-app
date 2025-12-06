@@ -279,11 +279,11 @@ resource "helm_release" "cert_manager" {
   namespace        = "cert-manager"
   create_namespace = true
 
-  values = [
-    <<EOF
-installCRDs: true
-EOF
-  ]
+  set = [{
+    name  = "installCRDs"
+    value = "true"
+  }]
+
 
   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
