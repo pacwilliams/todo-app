@@ -58,7 +58,12 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
 spec:
+  tls:
+  - hosts:
+    - todoapp.pwwizexercise.com
+    secretName: todoapp-tls
   rules:
+  - host: todoapp.pwwizexercise.com
   - http:
       paths:
       - path: /
@@ -68,3 +73,17 @@ spec:
             name: todoapp
             port:
               number: 8080
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: backend-cert
+spec:
+  secretName: todoapp-tls
+  commonName: todoapp.pwwizexercise.com
+  dnsNames:
+  - todoapp.pwwizexercise.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+
