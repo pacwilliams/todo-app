@@ -17,6 +17,7 @@ resource "azurerm_subnet" "subnet_1" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.my_terraform_network.name
   address_prefixes     = ["10.0.1.0/24"]
+  service_endpoints = ["Microsoft.KeyVault"]
 }
 
 resource "azurerm_subnet" "subnet_2" {
@@ -217,7 +218,7 @@ resource "azurerm_network_security_group" "aks_nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "443"
-    source_address_prefixes    = ["*"] # e.g. corporate IPs
+    source_address_prefix      = "*" 
     destination_address_prefix = "*"
   }
 }
