@@ -44,6 +44,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: todoapp
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: odl-candidate-sandbox-02-1986716
+    service.beta.kubernetes.io/azure-load-balancer-ip: backend-lb-ip
 spec:
   type: LoadBalancer
   ports:

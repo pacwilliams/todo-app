@@ -182,6 +182,15 @@ resource "azurerm_container_registry" "acr" {
   sku                 = "Basic"
 }
 
+resource "azurerm_public_ip" "lb" {
+  name                = "backend-lb-ip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+
 resource "azurerm_dns_zone" "main" {
   name                = "pwwizexercise.com"
   resource_group_name = azurerm_resource_group.rg.name
@@ -192,7 +201,7 @@ resource "azurerm_dns_a_record" "backend_dns" {
   zone_name           = azurerm_dns_zone.main.name
   resource_group_name = azurerm_resource_group.rg.name
   ttl                 = 300
-  records             = [data.azurerm_public_ip.aks_lb.ip_address]
+  records             = [azurerm_public_ip.aks_lb.ip_address]
 }
 
 resource "azurerm_network_security_group" "aks_nsg" {
