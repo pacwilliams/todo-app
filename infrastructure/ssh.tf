@@ -12,19 +12,18 @@ resource "azurerm_key_vault" "kv" {
   tenant_id           = data.azurerm_client_config.current.tenant_id
   sku_name            = "standard"
 
-  access_policy {
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = data.azurerm_client_config.current.object_id
-
-    key_permissions    = ["Get", "List", "Create", "Delete"]
-    secret_permissions = ["Get", "List", "Set", "Delete"]
-  }
 }
 
 resource "azurerm_role_assignment" "kv_secrets_user" {
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = "8659ba1e-7d54-46a4-975b-9aebf6a33a57" 
+}
+
+resource "azurerm_role_assignment" "kv_admin" {
+  scope                = azurerm_key_vault.kv.id
+  role_definition_name = "Key Vault Administrator"
+  principal_id         = "8659ba1e-7d54-46a4-975b-9aebf6a33a57"
 }
 
 resource "azurerm_role_assignment" "sp_kv_secrets_user" {
