@@ -11,6 +11,10 @@ resource "azurerm_key_vault" "kv" {
   resource_group_name = azurerm_resource_group.rg.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
   sku_name            = "standard"
+  rbac_authorization_enabled = true
+  soft_delete_retention_days = 7
+  public_network_access_enabled = false
+
 
 }
 
@@ -40,7 +44,7 @@ resource "azapi_resource_action" "ssh_public_key_gen" {
 
   response_export_values = ["publicKey", "privateKey"]
 
-  depends_on = [azurerm_key_vault.kv]
+  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user]
 }
 
 resource "azapi_resource" "ssh_public_key" {
@@ -49,7 +53,7 @@ resource "azapi_resource" "ssh_public_key" {
   location  = azurerm_resource_group.rg.location
   parent_id = azurerm_resource_group.rg.id
 
-  depends_on = [azurerm_key_vault.kv]
+  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user]
 }
 
 # Store the generated public key
