@@ -284,11 +284,11 @@ resource "helm_release" "cert_manager" {
       name  = "crds.enabled"
       value = "true"
     },
-    { name  = "crds.keep"
+    {
+      name  = "crds.keep"
       value = "true"
     }
   ]
-
 
   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
