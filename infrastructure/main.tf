@@ -182,7 +182,7 @@ resource "azurerm_container_registry" "acr" {
   sku                 = "Basic"
 }
 
-resource "azurerm_public_ip" "lb" {
+resource "azurerm_public_ip" "aks_lb" {
   name                = "backend-lb-ip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
