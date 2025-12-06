@@ -6,11 +6,11 @@ resource "random_pet" "ssh_key_name" {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "kv" {
-  name                        = "odl1986716KeyVault"
-  location                    = azurerm_resource_group.rg.location
-  resource_group_name         = azurerm_resource_group.rg.name
-  tenant_id                   = data.azurerm_client_config.current.tenant_id
-  sku_name                    = "standard"
+  name                = "odl1986716KeyVault"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  sku_name            = "standard"
 
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
@@ -28,6 +28,8 @@ resource "azapi_resource_action" "ssh_public_key_gen" {
   method      = "POST"
 
   response_export_values = ["publicKey", "privateKey"]
+
+  depends_on = ["azurerm_key_vault.kv"]
 }
 
 resource "azapi_resource" "ssh_public_key" {
@@ -35,6 +37,8 @@ resource "azapi_resource" "ssh_public_key" {
   name      = random_pet.ssh_key_name.id
   location  = azurerm_resource_group.rg.location
   parent_id = azurerm_resource_group.rg.id
+
+  depends_on = ["azurerm_key_vault.kv"]
 }
 
 # Store the generated public key
