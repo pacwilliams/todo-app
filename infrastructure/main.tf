@@ -281,9 +281,12 @@ resource "helm_release" "cert_manager" {
 
   set = [
     {
-    name  = "crds.enabled"
-    value = "true"
-  }
+      name  = "crds.enabled"
+      value = "true"
+    },
+    { name  = "crds.keep"
+      value = "true"
+    }
   ]
 
 
