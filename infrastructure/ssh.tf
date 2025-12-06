@@ -14,8 +14,36 @@ resource "azurerm_key_vault" "kv" {
   rbac_authorization_enabled = true
   soft_delete_retention_days = 7
   public_network_access_enabled = false
+  network_acls {
+    default_action             = "Deny"
+    bypass                     = "AzureServices"
+    virtual_network_subnet_ids = [azurerm_subnet.subnet_1.id, azurerm_subnet.subnet_2.id]
+  }
+}
+resource "azurerm_private_endpoint" "kv_pe" {
+  name                = "kv-private-endpoint"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.subnet_1.id
 
+  private_service_connection {
+    name                           = "kv-connection"
+    private_connection_resource_id = azurerm_key_vault.kv.id
+    subresource_names              = ["vault"]
+    is_manual_connection           = false
+  }
+}
 
+resource "azurerm_private_dns_zone" "kv_dns" {
+  name                = "privatelink.vaultcore.azure.net"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "kv_dns_link" {
+  name                  = "kv-dns-link"
+  resource_group_name   = azurerm_resource_group.rg.name
+  private_dns_zone_name = azurerm_private_dns_zone.kv_dns.name
+  virtual_network_id    = azurerm_virtual_network.my_terraform_network.id
 }
 
 resource "azurerm_role_assignment" "kv_secrets_user" {
@@ -33,6 +61,12 @@ resource "azurerm_role_assignment" "kv_admin" {
 resource "azurerm_role_assignment" "sp_kv_secrets_user" {
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+resource "azurerm_role_assignment" "kv_sp_assignment" {
+  scope                = azurerm_key_vault.kv.id
+  role_definition_name = "Key Vault Secrets Officer"
   principal_id         = data.azurerm_client_config.current.object_id
 }
 
