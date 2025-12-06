@@ -58,7 +58,7 @@ resource "azapi_resource" "ssh_public_key" {
 
 # Store the generated public key
 resource "azurerm_key_vault_secret" "ssh_public_key" {
-  name         = "aks-ssh-public-key"
+  name         = "vm-ssh-public-key"
   value        = azapi_resource_action.ssh_public_key_gen.output.publicKey
   key_vault_id = azurerm_key_vault.kv.id
 }
