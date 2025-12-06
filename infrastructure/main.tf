@@ -215,7 +215,11 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
 
   network_profile {
     network_plugin    = "azure"
+    network_policy = "azure"
     load_balancer_sku = "standard"
+    service_cidr       = "10.3.0.0/16"
+    dns_service_ip     = "10.3.0.10"
+
   }
 
   identity {
