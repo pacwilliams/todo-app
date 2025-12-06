@@ -275,14 +275,16 @@ resource "helm_release" "cert_manager" {
   name             = "cert-manager"
   repository       = "https://charts.jetstack.io"
   chart            = "cert-manager"
-  version          = "v1.14.4"
+  version          = "v1.19.1"
   namespace        = "cert-manager"
   create_namespace = true
 
-  set = [{
-    name  = "installCRDs"
+  set = [
+    {
+    name  = "crds.enabled"
     value = "true"
-  }]
+  }
+  ]
 
 
   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
