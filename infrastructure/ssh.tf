@@ -13,36 +13,7 @@ resource "azurerm_key_vault" "kv" {
   sku_name            = "standard"
   rbac_authorization_enabled = true
   soft_delete_retention_days = 7
-  public_network_access_enabled = false
-  network_acls {
-    default_action             = "Deny"
-    bypass                     = "AzureServices"
-  }
-}
-resource "azurerm_private_endpoint" "kv_pe" {
-  name                = "kv-private-endpoint"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  subnet_id           = azurerm_subnet.subnet_1.id
-
-  private_service_connection {
-    name                           = "kv-connection"
-    private_connection_resource_id = azurerm_key_vault.kv.id
-    subresource_names              = ["vault"]
-    is_manual_connection           = false
-  }
-}
-
-resource "azurerm_private_dns_zone" "kv_dns" {
-  name                = "privatelink.vaultcore.azure.net"
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "kv_dns_link" {
-  name                  = "kv-dns-link"
-  resource_group_name   = azurerm_resource_group.rg.name
-  private_dns_zone_name = azurerm_private_dns_zone.kv_dns.name
-  virtual_network_id    = azurerm_virtual_network.my_terraform_network.id
+  public_network_access_enabled = true
 }
 
 resource "azurerm_role_assignment" "kv_secrets_user" {
@@ -77,7 +48,7 @@ resource "azapi_resource_action" "ssh_public_key_gen" {
 
   response_export_values = ["publicKey", "privateKey"]
 
-  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment,azurerm_private_endpoint.kv_pe]
+  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment]
 }
 
 resource "azapi_resource" "ssh_public_key" {
@@ -86,7 +57,7 @@ resource "azapi_resource" "ssh_public_key" {
   location  = azurerm_resource_group.rg.location
   parent_id = azurerm_resource_group.rg.id
 
-  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment,azurerm_private_endpoint.kv_pe]
+  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment]
 }
 
 # Store the generated public key
@@ -94,7 +65,7 @@ resource "azurerm_key_vault_secret" "ssh_public_key" {
   name         = "vm-ssh-public-key"
   value        = azapi_resource_action.ssh_public_key_gen.output.publicKey
   key_vault_id = azurerm_key_vault.kv.id
-  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment,azurerm_private_endpoint.kv_pe]
+  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment]
 }
 
 # Store the generated private key
@@ -102,5 +73,5 @@ resource "azurerm_key_vault_secret" "ssh_private_key" {
   name         = "vm-ssh-private-key"
   value        = azapi_resource_action.ssh_public_key_gen.output.privateKey
   key_vault_id = azurerm_key_vault.kv.id
-  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment,azurerm_private_endpoint.kv_pe]
+  depends_on = [azurerm_key_vault.kv,azurerm_role_assignment.sp_kv_secrets_user,azurerm_role_assignment.kv_sp_assignment]
 }
