@@ -6,7 +6,7 @@ resource "random_pet" "ssh_key_name" {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "kv" {
-  name                        = "${azurerm_resource_group.rg.name}-KeyVault"
+  name                        = "odl1986716KeyVault"
   location                    = azurerm_resource_group.rg.location
   resource_group_name         = azurerm_resource_group.rg.name
   tenant_id                   = data.azurerm_client_config.current.tenant_id
@@ -16,8 +16,8 @@ resource "azurerm_key_vault" "kv" {
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = data.azurerm_client_config.current.object_id
 
-    key_permissions    = ["get", "list", "create", "delete"]
-    secret_permissions = ["get", "list", "set", "delete"]
+    key_permissions    = ["Get", "List", "Create", "Delete"]
+    secret_permissions = ["Get", "List", "Set", "Delete"]
   }
 }
 
