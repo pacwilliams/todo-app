@@ -270,3 +270,67 @@ resource "azurerm_role_assignment" "aks_role" {
   scope                            = azurerm_container_registry.acr.id
   skip_service_principal_aad_check = true
 }
+
+resource "helm_release" "cert_manager" {
+  name             = "cert-manager"
+  repository       = "https://charts.jetstack.io"
+  chart            = "cert-manager"
+  version          = "v1.14.4"
+  namespace        = "cert-manager"
+  create_namespace = true
+
+    values = [
+    <<EOF
+installCRDs: true
+EOF
+  ]
+
+  depends_on = [azurerm_kubernetes_cluster.aks_cluster]
+}
+
+resource "kubernetes_manifest" "letsencrypt_issuer" {
+  manifest = {
+    apiVersion = "cert-manager.io/v1"
+    kind       = "ClusterIssuer"
+    metadata = {
+      name = "letsencrypt-prod"
+    }
+    spec = {
+      acme = {
+        #server = "https://acme-v02.api.letsencrypt.org/directory"
+        server = "https://acme-staging-v02.api.letsencrypt.org/directory"
+        email  = "admin@example.com"
+        privateKeySecretRef = {
+          name = "letsencrypt-prod"
+        }
+        solvers = [{
+          http01 = {
+            ingress = {
+              class = "nginx"
+            }
+          }}]
+        }
+      }
+    }
+    depends_on = [helm_release.cert_manager]
+  }
+  
+resource "kubernetes_manifest" "backend_cert" {
+  manifest = {
+    apiVersion = "cert-manager.io/v1"
+    kind       = "Certificate"
+    metadata = {
+      name      = "backend-cert"
+      namespace = "default"
+    }
+    spec = {
+      secretName = "todoapp-tls"
+      issuerRef = {
+        name = "letsencrypt-prod"
+        kind = "ClusterIssuer"
+      }
+      dnsNames = ["todoapp.pwwizexercise.com"]
+    }
+  }
+  depends_on = [kubernetes_manifest.letsencrypt_issuer]
+}

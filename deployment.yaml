@@ -59,8 +59,9 @@ kind: Ingress
 metadata:
   name: todoapp-ingress
   annotations:
-    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
     - todoapp.pwwizexercise.com
@@ -76,17 +77,17 @@ spec:
             name: todoapp
             port:
               number: 8080
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: backend-cert
-spec:
-  secretName: todoapp-tls
-  commonName: todoapp.pwwizexercise.com
-  dnsNames:
-  - todoapp.pwwizexercise.com
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
+#---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: backend-cert
+# spec:
+#   secretName: todoapp-tls
+#   commonName: todoapp.pwwizexercise.com
+#   dnsNames:
+#   - todoapp.pwwizexercise.com
+#   issuerRef:
+#     name: letsencrypt-prod
+#     kind: ClusterIssuer
 
