@@ -192,7 +192,7 @@ resource "azurerm_dns_a_record" "backend_dns" {
   zone_name           = azurerm_dns_zone.main.name
   resource_group_name = azurerm_resource_group.rg.name
   ttl                 = 300
-  records             = [azurerm_public_ip.lb.ip_address]
+  records             = [data.azurerm_public_ip.aks_lb.ip_address]
 }
 
 resource "azurerm_network_security_group" "aks_nsg" {
