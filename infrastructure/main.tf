@@ -17,7 +17,7 @@ resource "azurerm_subnet" "subnet_1" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.my_terraform_network.name
   address_prefixes     = ["10.0.1.0/24"]
-  service_endpoints = ["Microsoft.KeyVault"]
+  service_endpoints = ["Microsoft.Storage","Microsoft.KeyVault"]
 }
 
 resource "azurerm_subnet" "subnet_2" {
@@ -26,7 +26,7 @@ resource "azurerm_subnet" "subnet_2" {
   virtual_network_name            = azurerm_virtual_network.my_terraform_network.name
   address_prefixes                = ["10.0.2.0/24"]
   default_outbound_access_enabled = false
-  service_endpoints               = ["Microsoft.Storage"]
+  service_endpoints               = ["Microsoft.Storage","Microsoft.KeyVault"]
 }
 
 
