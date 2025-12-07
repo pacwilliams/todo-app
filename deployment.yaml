@@ -44,9 +44,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: todoapp
-  annotations:
-    service.beta.kubernetes.io/azure-load-balancer-resource-group: odl-candidate-sandbox-02-1986716
-    service.beta.kubernetes.io/azure-load-balancer-ip: backend-lb-ip
 spec:
   type: LoadBalancer
   ports:
@@ -58,14 +55,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: todoapp-ingress
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
-  tls:
-  - hosts:
-    - todoapp.pwwizexercise.com
-    secretName: todoapp-tls
   rules:
   - host: todoapp.pwwizexercise.com
   - http:
@@ -77,17 +68,5 @@ spec:
             name: todoapp
             port:
               number: 8080
-#---
-# apiVersion: cert-manager.io/v1
-# kind: Certificate
-# metadata:
-#   name: backend-cert
-# spec:
-#   secretName: todoapp-tls
-#   commonName: todoapp.pwwizexercise.com
-#   dnsNames:
-#   - todoapp.pwwizexercise.com
-#   issuerRef:
-#     name: letsencrypt-prod
-#     kind: ClusterIssuer
+
 

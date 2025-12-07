@@ -183,46 +183,6 @@ resource "azurerm_container_registry" "acr" {
   sku                 = "Basic"
 }
 
-resource "azurerm_public_ip" "aks_lb" {
-  name                = "backend-lb-ip"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
-
-
-resource "azurerm_dns_zone" "main" {
-  name                = "pwwizexercise.com"
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_dns_a_record" "backend_dns" {
-  name                = "todoapp"
-  zone_name           = azurerm_dns_zone.main.name
-  resource_group_name = azurerm_resource_group.rg.name
-  ttl                 = 300
-  records             = [azurerm_public_ip.aks_lb.ip_address]
-}
-
-resource "azurerm_network_security_group" "aks_nsg" {
-  name                = "aks-nsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-  security_rule {
-    name                       = "Allow-HTTPS"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-}
-
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
   name                = "${azurerm_resource_group.rg.name}-aks"
   location            = azurerm_resource_group.rg.location
@@ -271,71 +231,4 @@ resource "azurerm_role_assignment" "aks_role" {
   skip_service_principal_aad_check = true
 }
 
-resource "helm_release" "cert_manager" {
-  name             = "cert-manager"
-  repository       = "https://charts.jetstack.io"
-  chart            = "cert-manager"
-  version          = "v1.19.1"
-  namespace        = "cert-manager"
-  create_namespace = true
 
-  set = [
-    {
-      name  = "crds.enabled"
-      value = "true"
-    },
-    {
-      name  = "crds.keep"
-      value = "true"
-    }
-  ]
-
-  depends_on = [azurerm_kubernetes_cluster.aks_cluster]
-}
-
-resource "kubernetes_manifest" "letsencrypt_issuer" {
-  manifest = {
-    apiVersion = "cert-manager.io/v1"
-    kind       = "ClusterIssuer"
-    metadata = {
-      name = "letsencrypt-prod"
-    }
-    spec = {
-      acme = {
-        #server = "https://acme-v02.api.letsencrypt.org/directory"
-        server = "https://acme-staging-v02.api.letsencrypt.org/directory"
-        email  = "admin@example.com"
-        privateKeySecretRef = {
-          name = "letsencrypt-prod"
-        }
-        solvers = [{
-          http01 = {
-            ingress = {
-              class = "nginx"
-            }
-        } }]
-      }
-    }
-  }
-  depends_on = [helm_release.cert_manager]
-}
-
-resource "kubernetes_manifest" "backend_cert" {
-  manifest = {
-    apiVersion = "cert-manager.io/v1"
-    kind       = "Certificate"
-    metadata = {
-      name      = "backend-cert"
-      namespace = "default"
-    }
-    spec = {
-      secretName = "todoapp-tls"
-      issuerRef = {
-        name = "letsencrypt-prod"
-        kind = "ClusterIssuer"
-      }
-      dnsNames = ["todoapp.pwwizexercise.com"]
-    }
-  }
-  depends_on = [kubernetes_manifest.letsencrypt_issuer]
-}
