@@ -19,16 +19,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Replace Tokens
-        uses: cschleiden/replace-tokens@v1.3
-        with:
-          files: ["${{ github.workspace }}/infrastructure/main.tf"]
-          tokenPrefix: '@@@'
-          tokenSuffix: '@@@'
-        env:
-          MONGODB_ADMIN_PWD: ${{ secrets.MONGODB_ADMIN_PWD }}
-          MONGODB_APP_USER_PWD: ${{ secrets.MONGODB_APP_USER_PWD }}
-
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3.1.2
         with:
