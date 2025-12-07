@@ -3,6 +3,18 @@ resource "random_pet" "ssh_key_name" {
   separator = ""
 }
 
+resource "random_password" "mongo_admin_pwd" {
+  length           = 16
+  special          = true
+  override_special = "!#$%*()-_=+[]{}<>:?"
+}
+
+resource "random_password" "mongo_appuser_pwd" {
+  length           = 16
+  special          = true
+  override_special = "!#$%*()-_=+[]{}<>:?"
+}
+
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "kv" {
@@ -72,6 +84,27 @@ resource "azurerm_key_vault_secret" "ssh_public_key" {
 resource "azurerm_key_vault_secret" "ssh_private_key" {
   name         = "vm-ssh-private-key"
   value        = azapi_resource_action.ssh_public_key_gen.output.privateKey
+  key_vault_id = azurerm_key_vault.kv.id
+  depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
+}
+
+resource "azurerm_key_vault_secret" "mongo_admin_pwd" {
+  name         = "mongodb-admin-pwd"
+  value        = random_password.mongo_admin_pwd.result
+  key_vault_id = azurerm_key_vault.kv.id
+  depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
+}
+
+resource "azurerm_key_vault_secret" "mongo_appuser_pwd" {
+  name         = "mongodb-appuser-pwd"
+  value        = random_password.mongo_appuser_pwd.result
+  key_vault_id = azurerm_key_vault.kv.id
+  depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
+}
+
+resource "azurerm_key_vault_secret" "mongo_db_url" {
+  name         = "mongodb-url"
+  value        =  jsonencode({"url":"mongodb://appuser:${random_password.mongo_appuser_pwd.result}@wiz-exercise-mongodb:27017"})
   key_vault_id = azurerm_key_vault.kv.id
   depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
 }

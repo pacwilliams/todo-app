@@ -1,0 +1,124 @@
+#cloud-config
+package_update: true
+packages:
+  - gnupg
+  - curl
+  - jq
+  - azure-cli
+  - cron
+
+write_files:
+  - path: /usr/local/bin/mongo_backup.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -e
+      source /etc/mongo-backup.env
+
+      TIMESTAMP=$(date +%Y-%m-%d-%H-%M)
+      FILE=/tmp/mongo-backup-$TIMESTAMP.gz
+
+      # Dump MongoDB
+      mongodump --uri="$MONGO_URI" --archive=$FILE --gzip
+
+      # Upload to Azure Blob Storage
+      az storage blob upload \
+        --account-name $STORAGE_ACCOUNT \
+        --container-name $CONTAINER_NAME \
+        --file $FILE \
+        --name backup-$TIMESTAMP.gz \
+        --auth-mode login
+
+      rm -f $FILE
+
+  - path: /etc/mongo-backup.env
+    permissions: '0600'
+    content: |
+      MONGO_URI="mongodb://appuser:@@@MONGODB_APP_USER_PWD@@@@localhost:27017/go-mongodb?authSource=go-mongodb"
+      STORAGE_ACCOUNT="yourstorageacct"
+      CONTAINER_NAME="mongodb-backups"
+
+runcmd:
+  - |
+    # Fetch secrets from Key Vault using Managed Identity
+    ADMIN_PWD=$(az keyvault secret show --vault-name ${key_vault_name} --name ${admin_secret} --query value -o tsv)
+    APP_PWD=$(az keyvault secret show --vault-name ${key_vault_name} --name ${app_secret} --query value -o tsv)
+
+    # Install MongoDB
+    set -e
+    sudo apt-get update -y
+    sudo apt-get install -y gnupg curl
+    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+    sudo apt-get update
+    sudo apt-get install -y \
+    mongodb-org=7.0.24 \
+    mongodb-org-database=7.0.24 \
+    mongodb-org-server=7.0.24 \
+    mongodb-mongosh \
+    mongodb-org-shell=7.0.24 \
+    mongodb-org-mongos=7.0.24 \
+    mongodb-org-tools=7.0.24 \
+    mongodb-org-database-tools-extra=7.0.24
+    echo "mongodb-org hold" | sudo dpkg --set-selections
+    echo "mongodb-org-database hold" | sudo dpkg --set-selections
+    echo "mongodb-org-server hold" | sudo dpkg --set-selections
+    echo "mongodb-mongosh hold" | sudo dpkg --set-selections
+    echo "mongodb-org-mongos hold" | sudo dpkg --set-selections
+    echo "mongodb-org-tools hold" | sudo dpkg --set-selections
+    echo "mongodb-org-database-tools-extra hold" | sudo dpkg --set-selections
+
+    # Configure mongod.conf
+    sudo tee /etc/mongod.conf > /dev/null <<MONGO_CONF
+    storage:
+      dbPath: /var/lib/mongodb
+      engine: wiredTiger
+    systemLog:
+      destination: file
+      logAppend: true
+      path: /var/log/mongodb/mongod.log
+    net:
+      port: 27017
+      bindIp: 0.0.0.0
+    security:
+      authorization: enabled
+    MONGO_CONF
+
+    # Start MongoDB and create users
+    sudo systemctl start mongod
+    sleep 5
+    mongosh --eval "db.getSiblingDB('admin').createUser({user:'admin',pwd:'$ADMIN_PWD',roles:[{role:'root',db:'admin'}]})"
+    mongosh --eval "db.getSiblingDB('go-mongodb').createUser({user:'appuser',pwd:'$APP_PWD',roles:[{role:'readWrite',db:'go-mongodb'}]})"
+    sudo systemctl restart mongod
+    sudo systemctl enable mongod
+
+    # Write backup script
+    - |
+    cat <<'SCRIPT' > /usr/local/bin/mongo_backup.sh
+    #!/bin/bash
+    set -e
+    TIMESTAMP=$(date +%Y-%m-%d-%H-%M)
+    FILE=/tmp/mongo-backup-$TIMESTAMP.gz
+
+    # Refresh secrets from Key Vault
+    ADMIN_PWD=$(az keyvault secret show --vault-name myKeyVaultName --name mongodb-admin-pwd --query value -o tsv)
+    APP_PWD=$(az keyvault secret show --vault-name myKeyVaultName --name mongodb-appuser-pwd --query value -o tsv)
+
+    # Dump MongoDB
+    mongodump --uri="mongodb://appuser:$APP_PWD@localhost:27017/go-mongodb?authSource=go-mongodb" --archive=$FILE --gzip
+
+    # Upload to Azure Blob Storage using Managed Identity
+    az storage blob upload \
+      --account-name yourstorageacct \
+      --container-name mongodb-backups \
+      --file $FILE \
+      --name backup-$TIMESTAMP.gz \
+      --auth-mode login
+
+    rm -f $FILE
+    SCRIPT
+    - chmod +x /usr/local/bin/mongo_backup.sh
+
+    # Schedule backup cron job (daily at 2 AM)
+    - '(crontab -l 2>/dev/null; echo "0 2 * * * /usr/local/bin/mongo_backup.sh >> /var/log/mongo-backup.log 2>&1") | crontab -'
+

@@ -65,13 +65,21 @@ jobs:
         id: install-kubectl
         uses: azure/setup-kubectl@v4.0.1
 
+      - name: Retrieve secret from Key Vault
+        id: keyvault
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            SECRET_VALUE=$(az keyvault secret show --name mongodb-url --vault-name ${{ secrets.KEY_VAULT_NAME }} --query value -o tsv)
+            echo "MONGODB_URL=$SECRET_VALUE" >> $GITHUB_ENV
+
       - name: Create Secret
         uses: azure/k8s-create-secret@v5.0.1
         with:
           namespace: default
           secret-name: mongodb-secrets
           secret-type: generic
-          string-data: ${{ secrets.MONGODB_URI }}
+          string-data: ${{ env.MONGODB_URL }}
 
       - name: Create Secret
         uses: azure/k8s-create-secret@v5.0.1

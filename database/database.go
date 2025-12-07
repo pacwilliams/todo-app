@@ -14,6 +14,12 @@ import (
 
 var Client *mongo.Client = CreateMongoClient()
 
+// constant for the collection name
+const TodosCollectionName = "todos"
+
+// package-level *mongo.Collection you can import/reuse elsewhere
+var TodoCollection *mongo.Collection
+
 func CreateMongoClient() *mongo.Client {
 	godotenv.Overload()
 	MongoDbURI := os.Getenv("MONGODB_URI")
@@ -34,4 +40,9 @@ func CreateMongoClient() *mongo.Client {
 
 func OpenCollection(client *mongo.Client, collectionName string) *mongo.Collection {
 	return client.Database("go-mongodb").Collection(collectionName)
+}
+
+// initialize the package-level collection variable once
+func init() {
+	TodoCollection = OpenCollection(Client, TodosCollectionName)
 }

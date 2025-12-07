@@ -100,7 +100,13 @@ resource "azurerm_storage_account" "sa" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
 }
+resource "azurerm_storage_container" "backups" {
+  name                  = "mongodb-backups"
+  storage_account_id    = azurerm_storage_account.sa.id
+  container_access_type = "private"
+}
 
+# Management lock to prevent accidental deletion of storage account
 resource "azurerm_management_lock" "sa_lock" {
   name       = "storage-delete-lock"
   scope      = azurerm_storage_account.sa.id
@@ -118,6 +124,12 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
   resource_group_name   = azurerm_resource_group.rg.name
   network_interface_ids = [azurerm_network_interface.my_terraform_nic.id]
   size                  = "Standard_DS1_v2"
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+
 
   os_disk {
     name                 = "${azurerm_resource_group.rg.name}-OsDisk"
@@ -145,50 +157,28 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
     storage_account_uri = azurerm_storage_account.sa.primary_blob_endpoint
   }
 
-  custom_data = base64encode(<<-EOF
-    #!/bin/bash
-    set -e
-    sudo apt-get update -y
-    sudo apt-get install -y gnupg curl
-    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
-    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
-    sudo apt-get update
-    sudo apt-get install -y \
-    mongodb-org=7.0.24 \
-    mongodb-org-database=7.0.24 \
-    mongodb-org-server=7.0.24 \
-    mongodb-mongosh \
-    mongodb-org-shell=7.0.24 \
-    mongodb-org-mongos=7.0.24 \
-    mongodb-org-tools=7.0.24 \
-    mongodb-org-database-tools-extra=7.0.24
-    echo "mongodb-org hold" | sudo dpkg --set-selections
-    echo "mongodb-org-database hold" | sudo dpkg --set-selections
-    echo "mongodb-org-server hold" | sudo dpkg --set-selections
-    echo "mongodb-mongosh hold" | sudo dpkg --set-selections
-    echo "mongodb-org-mongos hold" | sudo dpkg --set-selections
-    echo "mongodb-org-tools hold" | sudo dpkg --set-selections
-    echo "mongodb-org-database-tools-extra hold" | sudo dpkg --set-selections
-    sudo tee /etc/mongod.conf > /dev/null <<MONGO_CONF
-    storage:
-      dbPath: /var/lib/mongodb
-       engine: 
-       wiredTiger:
-    systemLog:
-      destination: file
-      logAppend: true
-      path: /var/log/mongodb/mongod.log
-    net:
-      port: 27017
-      bindIp: 0.0.0.0
-    processManagement:
-      timeZoneInfo: /usr/share/zoneinfo
-    MONGO_CONF
-    sudo systemctl start mongod
-    sudo systemctl enable mongod
-    sudo systemctl is-active mongod
-  EOF
-  )
+   custom_data = base64encode(templatefile("${path.module}/cloud-init-mongo.yaml", {
+    key_vault_name = azurerm_key_vault.kv.name
+    admin_secret   = "mongodb-admin-pwd"
+    app_secret     = "mongodb-appuser-pwd"
+  }))
+
+  depends_on = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
+}
+resource "azurerm_key_vault_access_policy" "vm_policy" {
+  key_vault_id = azurerm_key_vault.kv.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_linux_virtual_machine.my_terraform_vm.identity[0].principal_id
+
+  secret_permissions = ["Get", "List"]
+
+  depends_on = [azurerm_linux_virtual_machine.my_terraform_vm, azurerm_key_vault.kv]
+}
+
+resource "azurerm_role_assignment" "vm_storage_blob_contributor" {
+  scope                = azurerm_storage_account.sa.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_linux_virtual_machine.my_terraform_vm.identity[0].principal_id
 }
 
 resource "azurerm_container_registry" "acr" {
@@ -237,6 +227,13 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   tags = {
     Environment = "Production"
   }
+}
+
+resource "azurerm_key_vault_secret" "aks_kubeconfig" {
+  name         = "aks-kubeconfig"
+  value        = azurerm_kubernetes_cluster.aks_cluster.kube_config_raw
+  key_vault_id = azurerm_key_vault.kv.id
+  depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
 }
 
 resource "azurerm_role_assignment" "aks_role" {
