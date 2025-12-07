@@ -169,6 +169,21 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
     echo "mongodb-org-mongos hold" | sudo dpkg --set-selections
     echo "mongodb-org-tools hold" | sudo dpkg --set-selections
     echo "mongodb-org-database-tools-extra hold" | sudo dpkg --set-selections
+    sudo tee /etc/mongod.conf > /dev/null <<MONGO_CONF
+    storage:
+      dbPath: /var/lib/mongodb
+       engine: 
+       wiredTiger:
+    systemLog:
+      destination: file
+      logAppend: true
+      path: /var/log/mongodb/mongod.log
+    net:
+      port: 27017
+      bindIp: 0.0.0.0
+    processManagement:
+      timeZoneInfo: /usr/share/zoneinfo
+    MONGO_CONF
     sudo systemctl start mongod
     sudo systemctl enable mongod
     sudo systemctl is-active mongod
