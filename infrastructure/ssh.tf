@@ -5,14 +5,12 @@ resource "random_pet" "ssh_key_name" {
 
 resource "random_password" "mongo_admin_pwd" {
   length           = 16
-  special          = true
-  override_special = "!#$%*()-_=+[]{}<>:?"
+  special          = false
 }
 
 resource "random_password" "mongo_appuser_pwd" {
   length           = 16
-  special          = true
-  override_special = "!#$%*()-_=+[]{}<>:?"
+  special          = false
 }
 
 data "azurerm_client_config" "current" {}
