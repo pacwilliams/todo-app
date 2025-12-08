@@ -110,7 +110,7 @@ runcmd:
     APP_PWD=$(az keyvault secret show --vault-name odl1986716KeyVault --name mongodb-appuser-pwd --query value -o tsv)
 
     # Dump MongoDB
-    mongodump --uri="mongodb://appuser:${APP_PWD}@localhost:27017/go-mongodb?authSource=go-mongodb" --archive=$FILE --gzip
+    mongodump --uri="mongodb://appuser:$APP_PWD@localhost:27017/go-mongodb?authSource=go-mongodb" --archive=$FILE --gzip
 
     # Upload to Azure Blob Storage using Managed Identity
     az storage blob upload \
