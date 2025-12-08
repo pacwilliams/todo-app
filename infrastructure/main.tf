@@ -267,7 +267,12 @@ resource "azurerm_monitor_diagnostic_setting" "aks_diagnostics" {
     category = "kube-audit-admin"
   }
 
-
+  enabled_log {
+    category = "kube-apiserver"
+  }
+  enabled_log {
+    category = "kube-scheduler"
+  }
   enabled_log {
     category = "guard"
   }
