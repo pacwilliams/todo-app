@@ -297,11 +297,9 @@ resource "azurerm_monitor_diagnostic_setting" "vm_diagnostics" {
   target_resource_id         = azurerm_linux_virtual_machine.my_terraform_vm.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
 
-  enabled_log {
-    category = "GuestMetrics"
-  }
 
   enabled_metric {
     category = "AllMetrics"
   }
+  
 }
