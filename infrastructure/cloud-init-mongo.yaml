@@ -86,12 +86,12 @@ runcmd:
     # Start MongoDB and create users
     sudo systemctl start mongod
     sleep 5
-    mongosh admin --eval "db.getSiblingDB('admin').createUser({user:'admin',pwd:'${ADMIN_PWD}',roles:[{role:'root',db:'admin'}]})"
+    mongosh admin --eval "db.getSiblingDB('admin').createUser({user:'admin',pwd:'$ADMIN_PWD',roles:[{role:'root',db:'admin'}]})"
     sudo systemctl stop mongod
     sudo sed -i 's/authorization: disabled/authorization: enabled/' /etc/mongod.conf
     sudo systemctl start mongod
     sleep 5
-    mongosh -u admin -p "${ADMIN_PWD}" --authenticationDatabase admin --eval "db.getSiblingDB('go-mongodb').createUser({user:'appuser',pwd:'${APP_PWD}',roles:[{role:'readWrite',db:'go-mongodb'}]})"
+    mongosh -u admin -p "$ADMIN_PWD" --authenticationDatabase admin --eval "db.getSiblingDB('go-mongodb').createUser({user:'appuser',pwd:'$APP_PWD',roles:[{role:'readWrite',db:'go-mongodb'}]})"
     sudo systemctl enable mongod
 
     # Install Azure CLI
