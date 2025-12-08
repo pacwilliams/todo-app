@@ -297,17 +297,3 @@ resource "azurerm_monitor_diagnostic_setting" "vm_diagnostics" {
     category = "AllMetrics"
   }
 }
-
-resource "azurerm_policy_assignment" "restrict_regions" {
-  name                 = "restrict-regions"
-  scope                = azurerm_resource_group.rg.id
-  policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/LOCATION_RESTRICTION_ID"
-
-  parameters = <<PARAMS
-  {
-    "listOfAllowedLocations": {
-      "value": ["eastus", "westeurope"]
-    }
-  }
-  PARAMS
-}
