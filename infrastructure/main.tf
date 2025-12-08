@@ -175,6 +175,14 @@ resource "azurerm_key_vault_access_policy" "vm_policy" {
   depends_on = [azurerm_linux_virtual_machine.my_terraform_vm, azurerm_key_vault.kv]
 }
 
+# Role assignment: grant VM identity access to secrets
+resource "azurerm_role_assignment" "kv_secrets_user" {
+  scope                = azurerm_key_vault.kv.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_linux_virtual_machine.my_terraform_vm.identity[0].principal_id
+}
+
+
 resource "azurerm_role_assignment" "vm_storage_blob_contributor" {
   scope                = azurerm_storage_account.sa.id
   role_definition_name = "Storage Blob Data Contributor"
@@ -301,5 +309,5 @@ resource "azurerm_monitor_diagnostic_setting" "vm_diagnostics" {
   enabled_metric {
     category = "AllMetrics"
   }
-  
+
 }

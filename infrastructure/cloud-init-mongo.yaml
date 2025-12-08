@@ -4,7 +4,6 @@ packages:
   - gnupg
   - curl
   - jq
-  - azure-cli
   - cron
 
 write_files:
@@ -34,8 +33,8 @@ write_files:
   - path: /etc/mongo-backup.env
     permissions: '0600'
     content: |
-      MONGO_URI="mongodb://appuser:@@@MONGODB_APP_USER_PWD@@@@localhost:27017/go-mongodb?authSource=go-mongodb"
-      STORAGE_ACCOUNT="yourstorageacct"
+      MONGO_URI="mongodb://appuser:${APP_PWD}@localhost:27017/go-mongodb?authSource=go-mongodb"
+      STORAGE_ACCOUNT="odl1986716"
       CONTAINER_NAME="mongodb-backups"
 
 runcmd:
@@ -87,16 +86,18 @@ runcmd:
     # Start MongoDB and create users
     sudo systemctl start mongod
     sleep 5
-    mongosh --eval "db.getSiblingDB('admin').createUser({user:'admin',pwd:'$ADMIN_PWD',roles:[{role:'root',db:'admin'}]})"
+    mongosh admin --eval "db.getSiblingDB('admin').createUser({user:'admin',pwd:'${ADMIN_PWD}',roles:[{role:'root',db:'admin'}]})"
     sudo systemctl stop mongod
     sudo sed -i 's/authorization: disabled/authorization: enabled/' /etc/mongod.conf
     sudo systemctl start mongod
     sleep 5
-    mongosh -u admin -p "$ADMIN_PWD" --authenticationDatabase admin --eval "db.getSiblingDB('go-mongodb').createUser({user:'appuser',pwd:'$APP_PWD',roles:[{role:'readWrite',db:'go-mongodb'}]})"
+    mongosh -u admin -p "${ADMIN_PWD}" --authenticationDatabase admin --eval "db.getSiblingDB('go-mongodb').createUser({user:'appuser',pwd:'${APP_PWD}',roles:[{role:'readWrite',db:'go-mongodb'}]})"
     sudo systemctl enable mongod
 
+    # Install Azure CLI
+    curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
     # Write backup script
-    - |
     cat <<'SCRIPT' > /usr/local/bin/mongo_backup.sh
     #!/bin/bash
     set -e
@@ -104,15 +105,16 @@ runcmd:
     FILE=/tmp/mongo-backup-$TIMESTAMP.gz
 
     # Refresh secrets from Key Vault
-    ADMIN_PWD=$(az keyvault secret show --vault-name myKeyVaultName --name mongodb-admin-pwd --query value -o tsv)
-    APP_PWD=$(az keyvault secret show --vault-name myKeyVaultName --name mongodb-appuser-pwd --query value -o tsv)
+    az login --identity
+    ADMIN_PWD=$(az keyvault secret show --vault-name odl1986716KeyVault --name mongodb-admin-pwd --query value -o tsv)
+    APP_PWD=$(az keyvault secret show --vault-name odl1986716KeyVault --name mongodb-appuser-pwd --query value -o tsv)
 
     # Dump MongoDB
-    mongodump --uri="mongodb://appuser:$APP_PWD@localhost:27017/go-mongodb?authSource=go-mongodb" --archive=$FILE --gzip
+    mongodump --uri="mongodb://appuser:${APP_PWD}@localhost:27017/go-mongodb?authSource=go-mongodb" --archive=$FILE --gzip
 
     # Upload to Azure Blob Storage using Managed Identity
     az storage blob upload \
-      --account-name yourstorageacct \
+      --account-name odl1986716 \
       --container-name mongodb-backups \
       --file $FILE \
       --name backup-$TIMESTAMP.gz \
