@@ -157,7 +157,7 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
     storage_account_uri = azurerm_storage_account.sa.primary_blob_endpoint
   }
 
-   custom_data = base64encode(templatefile("${path.module}/cloud-init-mongo.yaml", {
+  custom_data = base64encode(templatefile("${path.module}/cloud-init-mongo.yaml", {
     key_vault_name = azurerm_key_vault.kv.name
     admin_secret   = "mongodb-admin-pwd"
     app_secret     = "mongodb-appuser-pwd"
@@ -243,4 +243,71 @@ resource "azurerm_role_assignment" "aks_role" {
   skip_service_principal_aad_check = true
 }
 
+# Log Analytics Workspace
+resource "azurerm_log_analytics_workspace" "law" {
+  name                = "odl1986716-law"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
 
+resource "azurerm_monitor_diagnostic_setting" "aks_diagnostics" {
+  name                       = "aks-diagnostics"
+  target_resource_id         = azurerm_kubernetes_cluster.aks_cluster.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
+
+  # Enable AKS audit logs
+  enabled_log {
+    category = "AKSAudit"
+  }
+
+  # Enable AKS audit admin logs
+  enabled_log {
+    category = "AKSAuditAdmin"
+  }
+
+  # Enable AKS control plane logs
+  enabled_log {
+    category = "AKSControlPlane"
+  }
+
+  # You can also send metrics if needed
+  enabled_metric {
+    category = "AllMetrics"
+
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "vm_diagnostics" {
+  name                       = "vm-diagnostics"
+  target_resource_id         = azurerm_linux_virtual_machine.my_terraform_vm.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
+
+  enabled_log {
+    category = "Security"
+
+  }
+
+  enabled_log {
+    category = "AuditLogs"
+  }
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}
+
+resource "azurerm_policy_assignment" "restrict_regions" {
+  name                 = "restrict-regions"
+  scope                = azurerm_resource_group.rg.id
+  policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/LOCATION_RESTRICTION_ID"
+
+  parameters = <<PARAMS
+  {
+    "listOfAllowedLocations": {
+      "value": ["eastus", "westeurope"]
+    }
+  }
+  PARAMS
+}
