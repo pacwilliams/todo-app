@@ -298,11 +298,6 @@ resource "azurerm_monitor_diagnostic_setting" "vm_diagnostics" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
 
   enabled_log {
-    category = "Security"
-
-  }
-
-  enabled_log {
     category = "GuestMetrics"
   }
 
