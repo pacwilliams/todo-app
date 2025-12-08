@@ -259,19 +259,27 @@ resource "azurerm_monitor_diagnostic_setting" "aks_diagnostics" {
 
   # Enable AKS audit logs
   enabled_log {
-    category = "AKSAudit"
+    category = "kube-audit"
   }
 
   # Enable AKS audit admin logs
   enabled_log {
-    category = "AKSAuditAdmin"
+    category = "kube-audit-admin"
   }
 
-  # Enable AKS control plane logs
+
   enabled_log {
-    category = "AKSControlPlane"
+    category = "guard"
   }
 
+  enabled_log {
+    category = "cluster-autoscaler"
+  }
+
+
+  enabled_log {
+    category = "cloud-controller-manager"
+  }
   # You can also send metrics if needed
   enabled_metric {
     category = "AllMetrics"
@@ -290,7 +298,7 @@ resource "azurerm_monitor_diagnostic_setting" "vm_diagnostics" {
   }
 
   enabled_log {
-    category = "AuditLogs"
+    category = "GuestMetrics"
   }
 
   enabled_metric {
