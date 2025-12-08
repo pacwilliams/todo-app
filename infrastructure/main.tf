@@ -176,7 +176,7 @@ resource "azurerm_key_vault_access_policy" "vm_policy" {
 }
 
 # Role assignment: grant VM identity access to secrets
-resource "azurerm_role_assignment" "kv_secrets_user" {
+resource "azurerm_role_assignment" "vm_secrets_user" {
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
   principal_id         = azurerm_linux_virtual_machine.my_terraform_vm.identity[0].principal_id
