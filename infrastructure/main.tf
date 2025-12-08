@@ -317,7 +317,7 @@ resource "azurerm_monitor_diagnostic_setting" "vm_diagnostics" {
 resource "helm_release" "prometheus" {
   name       = "prometheus"
   repository = "https://prometheus-community.github.io/helm-charts"
-  chart      = "prometheus"
+  chart      = "kube-prometheus-stack"
   namespace  = "monitoring"
 
   create_namespace = true
@@ -326,7 +326,7 @@ resource "helm_release" "prometheus" {
     <<EOF
 alertmanager:
   enabled: true
-  
+
 server:
   service:
     type: LoadBalancer
@@ -355,4 +355,6 @@ service:
   type: LoadBalancer
 EOF
   ]
+
+depends_on = [ helm_release.prometheus ]
 }

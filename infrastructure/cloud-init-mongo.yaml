@@ -17,8 +17,12 @@ write_files:
       TIMESTAMP=$(date +%Y-%m-%d-%H-%M)
       FILE=/tmp/mongo-backup-$TIMESTAMP.gz
 
+      az login --identity
+      ADMIN_PWD=$(az keyvault secret show --vault-name odl1986716KeyVault --name mongodb-admin-pwd --query value -o tsv)
+      APP_PWD=$(az keyvault secret show --vault-name odl1986716KeyVault --name mongodb-appuser-pwd --query value -o tsv)
+
       # Dump MongoDB
-      mongodump --uri="$MONGO_URI" --archive=$FILE --gzip
+      mongodump --uri="mongodb://appuser:$${APP_PWD}@localhost:27017/go-mongodb?authSource=go-mongodb" --archive=$FILE --gzip
 
       # Upload to Azure Blob Storage
       az storage blob upload \
@@ -33,12 +37,40 @@ write_files:
   - path: /etc/mongo-backup.env
     permissions: '0600'
     content: |
-      MONGO_URI="mongodb://appuser:@@@MONGODB_APP_USER_PWD@@@@localhost:27017/go-mongodb?authSource=go-mongodb"
-      STORAGE_ACCOUNT="yourstorageacct"
+      STORAGE_ACCOUNT="odl1986716"
       CONTAINER_NAME="mongodb-backups"
+
+  - path: /etc/systemd/system/mongo-backup.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=MongoDB Backup Service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/mongo_backup.sh
+
+  - path: /etc/systemd/system/mongo-backup.timer
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Run MongoDB Backup Daily at 2AM
+
+      [Timer]
+      OnCalendar=*-*-* 02:00:00
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+
 
 runcmd:
   - |
+    # Install Azure CLI
+    curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+    az login --identity
+
     # Fetch secrets from Key Vault using Managed Identity
     ADMIN_PWD=$(az keyvault secret show --vault-name ${key_vault_name} --name ${admin_secret} --query value -o tsv)
     APP_PWD=$(az keyvault secret show --vault-name ${key_vault_name} --name ${app_secret} --query value -o tsv)
@@ -85,45 +117,16 @@ runcmd:
 
     # Start MongoDB and create users
     sudo systemctl start mongod
-    sleep 5
-    mongosh admin --eval "db.getSiblingDB('admin').createUser({user:'admin',pwd:'$ADMIN_PWD',roles:[{role:'root',db:'admin'}]})"
+    sleep 15
+    mongosh admin --eval "db.getSiblingDB('admin').createUser({user:'admin',pwd:'$${ADMIN_PWD}',roles:[{role:'root',db:'admin'}]})" >> /var/log/mongosh.log 2>&1
     sudo systemctl stop mongod
     sudo sed -i 's/authorization: disabled/authorization: enabled/' /etc/mongod.conf
     sudo systemctl start mongod
-    sleep 5
-    mongosh -u admin -p "$ADMIN_PWD" --authenticationDatabase admin --eval "db.getSiblingDB('go-mongodb').createUser({user:'appuser',pwd:'$APP_PWD',roles:[{role:'readWrite',db:'go-mongodb'}]})"
+    sleep 15
+    mongosh -u admin -p "$${ADMIN_PWD}" --authenticationDatabase admin --eval "db.getSiblingDB('go-mongodb').createUser({user:'appuser',pwd:'$${APP_PWD}',roles:[{role:'readWrite',db:'go-mongodb'}]})" >> /var/log/mongosh.log 2>&1
     sudo systemctl enable mongod
 
-    # Install Azure CLI
-    curl -sL https://aka.ms/InstallAzureCLIDeb | bash
-
-    # Write backup script
-    cat <<'SCRIPT' > /usr/local/bin/mongo_backup.sh
-    #!/bin/bash
-    set -e
-    TIMESTAMP=$(date +%Y-%m-%d-%H-%M)
-    FILE=/tmp/mongo-backup-$TIMESTAMP.gz
-
-    # Refresh secrets from Key Vault
-    az login --identity
-    ADMIN_PWD=$(az keyvault secret show --vault-name odl1986716KeyVault --name mongodb-admin-pwd --query value -o tsv)
-    APP_PWD=$(az keyvault secret show --vault-name odl1986716KeyVault --name mongodb-appuser-pwd --query value -o tsv)
-
-    # Dump MongoDB
-    mongodump --uri="mongodb://appuser:$APP_PWD@localhost:27017/go-mongodb?authSource=go-mongodb" --archive=$FILE --gzip
-
-    # Upload to Azure Blob Storage using Managed Identity
-    az storage blob upload \
-      --account-name odl1986716 \
-      --container-name mongodb-backups \
-      --file $FILE \
-      --name backup-$TIMESTAMP.gz \
-      --auth-mode login
-
-    rm -f $FILE
-    SCRIPT
-    - chmod +x /usr/local/bin/mongo_backup.sh
-
-    # Schedule backup cron job (daily at 2 AM)
-    - '(crontab -l 2>/dev/null; echo "0 2 * * * /usr/local/bin/mongo_backup.sh >> /var/log/mongo-backup.log 2>&1") | crontab -'
-
+    # Enable and start backup timer
+    sudo systemctl daemon-reload
+    sudo systemctl enable mongo-backup.timer
+    sudo systemctl start mongo-backup.timer
