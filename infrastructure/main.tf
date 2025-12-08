@@ -311,3 +311,48 @@ resource "azurerm_monitor_diagnostic_setting" "vm_diagnostics" {
   }
 
 }
+
+
+# Prometheus Helm release
+resource "helm_release" "prometheus" {
+  name       = "prometheus"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "prometheus"
+  namespace  = "monitoring"
+
+  create_namespace = true
+
+  values = [
+    <<EOF
+alertmanager:
+  enabled: true
+  
+server:
+  service:
+    type: LoadBalancer
+
+kube-state-metrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true
+EOF
+  ]
+}
+
+# Grafana Helm release
+resource "helm_release" "grafana" {
+  name       = "grafana"
+  repository = "https://grafana.github.io/helm-charts"
+  chart      = "grafana"
+  namespace  = "monitoring"
+
+  values = [
+    <<EOF
+adminUser: "admin"
+adminPassword: "${random_password.grafana_pwd.result}"
+service:
+  type: LoadBalancer
+EOF
+  ]
+}

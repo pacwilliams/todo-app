@@ -13,6 +13,11 @@ resource "random_password" "mongo_appuser_pwd" {
   special = false
 }
 
+resource "random_password" "grafana_pwd" {
+  length  = 16
+  special = false
+}
+
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "kv" {
@@ -103,6 +108,13 @@ resource "azurerm_key_vault_secret" "mongo_appuser_pwd" {
 resource "azurerm_key_vault_secret" "mongo_db_url" {
   name         = "mongodb-url"
   value        = jsonencode({ "url" : "mongodb://appuser:${random_password.mongo_appuser_pwd.result}@wiz-exercise-mongodb:27017/go-mongodb?authSource=go-mongodb" })
+  key_vault_id = azurerm_key_vault.kv.id
+  depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
+}
+
+resource "azurerm_key_vault_secret" "grafana_pwd" {
+  name         = "grafana-pwd"
+  value        = random_password.grafana_pwd.result
   key_vault_id = azurerm_key_vault.kv.id
   depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
 }
