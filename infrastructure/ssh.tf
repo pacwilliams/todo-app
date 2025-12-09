@@ -129,10 +129,6 @@ resource "azurerm_monitor_diagnostic_setting" "kv_logging" {
     category = "AuditEvent"
   }
 
-  enabled_log {
-    category = "AllLogs"
-  }
-
   # Enable metrics
   enabled_metric {
     category = "AllMetrics"

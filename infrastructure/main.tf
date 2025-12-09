@@ -518,6 +518,7 @@ EOF
 resource "grafana_data_source" "prometheus" {
   name        = "Prometheus"
   type        = "prometheus"
+  provider    = grafana.main
   url         = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
   access_mode = "proxy"
 
@@ -529,13 +530,16 @@ resource "grafana_data_source" "prometheus" {
 }
 
 resource "grafana_dashboard" "k8s" {
+  provider = grafana.main
   config_json = file("${path.module}/dashboards/6417_rev1.json")
 
   depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana]
 }
 
 resource "grafana_dashboard" "k8s2" {
+  provider = grafana.main
   config_json = file("${path.module}/dashboards/15661_rev2.json")
+
   depends_on  = [helm_release.grafana, data.kubernetes_service_v1.grafana]
 }
 
@@ -564,12 +568,4 @@ data "kubernetes_service_v1" "grafana" {
 data "azurerm_key_vault_secret" "aks_kubeconfig" {
   name         = "aks-kubeconfig"
   key_vault_id = azurerm_key_vault.kv.id
-}
-
-
-
-resource "local_file" "kubeconfig" {
-  content    = data.azurerm_key_vault_secret.aks_kubeconfig.value
-  filename   = "${path.module}/kubeconfig.yaml"
-  depends_on = [azurerm_key_vault_secret.aks_kubeconfig]
 }
