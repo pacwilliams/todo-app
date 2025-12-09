@@ -15,3 +15,9 @@ variable "username" {
   description = "The username for the local account that will be created on the new VM."
   default     = "azureadmin"
 }
+
+variable "enable_manifests" {
+  type        = bool
+  description = "Enable or disable the deployment of Kubernetes manifests."
+  default     = false
+}

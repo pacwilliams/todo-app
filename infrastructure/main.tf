@@ -321,6 +321,8 @@ resource "helm_release" "cert_manager" {
 }
 
 resource "kubernetes_manifest" "letsencrypt_prod" {
+  count = var.enable_manifests ? 1 : 0
+  
   manifest = {
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
