@@ -14,3 +14,15 @@ output "virtual_network_name" {
 output "public_ip_address" {
   value = azurerm_linux_virtual_machine.my_terraform_vm.public_ip_address
 }
+
+output "aks_ingress_public_ip" {
+  value = azurerm_public_ip.aks_ingress_ip.ip_address
+}
+
+output "aks_ingress_public_fqdn" {
+  value = azurerm_public_ip.aks_ingress_ip.fqdn
+}
+
+output "aks_ingress_custom_domain" {
+  value = azurerm_dns_a_record.aks_dns.fqdn
+}

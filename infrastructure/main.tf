@@ -223,6 +223,27 @@ resource "azurerm_management_lock" "acr_lock" {
   depends_on = [azurerm_container_registry.acr]
 }
 
+resource "azurerm_public_ip" "aks_ingress_ip" {
+  name                = "aks-ingress-ip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_dns_zone" "aks_zone" {
+  name                = "pw-az-demo.com"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_dns_a_record" "aks_dns" {
+  name                = "todo"
+  zone_name           = azurerm_dns_zone.aks_zone.name
+  resource_group_name = azurerm_resource_group.rg.name
+  ttl                 = 300
+  records             = [azurerm_public_ip.aks_ingress_ip.ip_address]
+}
+
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
   name                = "${azurerm_resource_group.rg.name}-aks"
   location            = azurerm_resource_group.rg.location
@@ -263,6 +284,107 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     Environment = "Production"
   }
 }
+
+resource "helm_release" "nginx_ingress" {
+  name             = "ingress-nginx"
+  repository       = "https://kubernetes.github.io/ingress-nginx"
+  chart            = "ingress-nginx"
+  namespace        = "ingress-basic"
+  create_namespace = true
+
+  set = [
+    {
+      name  = "controller.service.loadBalancerIP"
+      value = azurerm_public_ip.aks_ingress_ip.ip_address
+    },
+    {
+      name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-load-balancer-resource-group"
+      value = azurerm_resource_group.rg.name
+    }
+  ]
+}
+
+resource "helm_release" "cert_manager" {
+  name             = "cert-manager"
+  repository       = "https://charts.jetstack.io"
+  chart            = "cert-manager"
+  namespace        = "cert-manager"
+  create_namespace = true
+
+  set = {
+    name  = "installCRDs"
+    value = "true"
+  }
+}
+
+resource "kubernetes_manifest" "letsencrypt_prod" {
+  manifest = {
+    apiVersion = "cert-manager.io/v1"
+    kind       = "ClusterIssuer"
+    metadata = {
+      name = "letsencrypt-prod"
+    }
+    spec = {
+      acme = {
+        server = "https://acme-v02.api.letsencrypt.org/directory"
+        email  = "you@example.com"
+        privateKeySecretRef = {
+          name = "letsencrypt-prod"
+        }
+        solvers = [{
+          http01 = {
+            ingress = {
+              class = "nginx"
+            }
+          }
+        }]
+      }
+    }
+  }
+}
+
+resource "kubernetes_ingress_v1" "my_app_ingress" {
+  metadata {
+    name      = "todo-ingress"
+    namespace = "default"
+    annotations = {
+      "kubernetes.io/ingress.class"       = "nginx"
+      "cert-manager.io/cluster-issuer"    = "letsencrypt-prod"
+    }
+  }
+
+  spec {
+    tls {
+      hosts      = ["todo.pw-az-demo.com"]
+      secret_name = "todo-tls"
+    }
+
+    rule {
+      host = "todo.pw-az-demo.com"
+      http {
+        path {
+          path     = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = "todoapp"
+              port {
+                number = 8080
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+resource "azurerm_role_assignment" "aks_network_contrib" {
+  principal_id         = azurerm_kubernetes_cluster.aks_cluster.identity[0].principal_id
+  role_definition_name = "Network Contributor"
+  scope                = azurerm_resource_group.rg.id
+}
+
 
 resource "azurerm_key_vault_secret" "aks_kubeconfig" {
   name         = "aks-kubeconfig"
@@ -385,3 +507,4 @@ EOF
 
   depends_on = [helm_release.prometheus]
 }
+
