@@ -514,10 +514,10 @@ resource "grafana_data_source" "prometheus" {
   name   = "Prometheus"
   type   = "prometheus"
   url    = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
-  access = "proxy"
+  access_mode = "proxy"
 
-  json_data {
-    http_method = "POST"
+  json_data_encoded = {
+    httpMethod = "POST"
   }
 
   depends_on = [helm_release.grafana, helm_release.prometheus]
@@ -532,4 +532,11 @@ resource "grafana_dashboard" "k8s" {
 resource "grafana_dashboard" "k8s2" {
   config_json = file("${path.module}/dashboards/15661_rev2.json")
   depends_on  = [grafana_data_source.prometheus]
+}
+
+data "kubernetes_service" "grafana" {
+  metadata {
+    name      = "grafana"
+    namespace = "monitoring"
+  }
 }

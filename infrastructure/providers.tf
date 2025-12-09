@@ -62,8 +62,7 @@ provider "helm" {
 }
 
 provider "grafana" {
-  url           = "http://${helm_release.grafana.status[0].load_balancer_ingress[0].ip}:3000"
-  auth_username = "admin"
-  auth_password = random_password.grafana_pwd.result
+  url  = "http://${data.kubernetes_service.grafana.status[0].load_balancer[0].ingress[0].ip}:80"
+  auth = "admin:${random_password.grafana_pwd.result}"
 }
 
