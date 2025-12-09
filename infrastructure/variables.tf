@@ -19,5 +19,5 @@ variable "username" {
 variable "enable_manifests" {
   type        = bool
   description = "Enable or disable the deployment of Kubernetes manifests."
-  default     = false
+  default     = true
 }

@@ -322,7 +322,7 @@ resource "helm_release" "cert_manager" {
 
 resource "kubernetes_manifest" "letsencrypt_prod" {
   count = var.enable_manifests ? 1 : 0
-  
+
   manifest = {
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
@@ -544,21 +544,21 @@ data "kubernetes_service_v1" "grafana" {
     name      = helm_release.grafana.name
     namespace = helm_release.grafana.namespace
   }
-  depends_on = [null_resource.wait_for_grafana]
+  #depends_on = [null_resource.wait_for_grafana]
 }
 
-resource "null_resource" "wait_for_grafana" {
-  provisioner "local-exec" {
-    command = <<EOT
-    until kubectl get svc grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}' | grep -qE '.+'; do
-      echo "Waiting for Grafana LoadBalancer IP..."
-      sleep 10
-    done
-    EOT
-  }
+# resource "null_resource" "wait_for_grafana" {
+#   provisioner "local-exec" {
+#     command = <<EOT
+#     until kubectl get svc grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}' | grep -qE '.+'; do
+#       echo "Waiting for Grafana LoadBalancer IP..."
+#       sleep 10
+#     done
+#     EOT
+#   }
 
-  depends_on = [helm_release.grafana]
-}
+#   depends_on = [helm_release.grafana]
+# }
 
 
 data "azurerm_key_vault_secret" "aks_kubeconfig" {
