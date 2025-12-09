@@ -343,7 +343,7 @@ resource "kubernetes_manifest" "letsencrypt_prod" {
       }
     }
   }
-  depends_on = [ azurerm_kubernetes_cluster.aks_cluster ]
+  depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
 
 resource "kubernetes_ingress_v1" "my_app_ingress" {
@@ -380,7 +380,7 @@ resource "kubernetes_ingress_v1" "my_app_ingress" {
       }
     }
   }
-  depends_on = [ azurerm_kubernetes_cluster.aks_cluster ]
+  depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
 
 resource "azurerm_role_assignment" "aks_network_contrib" {
