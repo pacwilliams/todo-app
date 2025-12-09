@@ -311,10 +311,12 @@ resource "helm_release" "cert_manager" {
   namespace        = "cert-manager"
   create_namespace = true
 
-  set = {
+  set = [
+    {
     name  = "installCRDs"
     value = "true"
   }
+  ]
 }
 
 resource "kubernetes_manifest" "letsencrypt_prod" {
@@ -508,3 +510,23 @@ EOF
   depends_on = [helm_release.prometheus]
 }
 
+resource "grafana_data_source" "prometheus" {
+  name   = "Prometheus"
+  type   = "prometheus"
+  url    = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+  access = "proxy"
+
+  json_data {
+    http_method = "POST"
+  }
+
+  depends_on = [helm_release.grafana, helm_release.prometheus]
+}
+
+resource "grafana_dashboard" "k8s" {
+  config_json = file("${path.module}/dashboards/6417_rev1.json")
+}
+
+resource "grafana_dashboard" "k8s2" {
+  config_json = file("${path.module}/dashboards/15661_rev2.json")
+}
