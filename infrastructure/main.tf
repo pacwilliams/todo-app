@@ -354,12 +354,12 @@ resource "kubernetes_ingress_v1" "my_app_ingress" {
     name      = "todo-ingress"
     namespace = "default"
     annotations = {
-      "kubernetes.io/ingress.class"    = "nginx"
       "cert-manager.io/cluster-issuer" = "letsencrypt-prod"
     }
   }
 
   spec {
+    ingress_class_name = "nginx"
     tls {
       hosts       = ["todo.pw-az-demo.com"]
       secret_name = "todo-tls"
