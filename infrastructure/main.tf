@@ -545,7 +545,7 @@ data "kubernetes_service_v1" "grafana" {
 
 data "azurerm_key_vault_secret" "aks_kubeconfig" {
   name         = "aks-kubeconfig"
-  key_vault_id = azurerm_key_vault.my_kv.id
+  key_vault_id = azurerm_key_vault.kv.id
 }
 
 
