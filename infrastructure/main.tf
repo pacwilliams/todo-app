@@ -317,6 +317,7 @@ resource "helm_release" "cert_manager" {
       value = "true"
     }
   ]
+  depends_on = [ azurerm_kubernetes_cluster.aks_cluster ]
 }
 
 resource "kubernetes_manifest" "letsencrypt_prod" {
@@ -343,7 +344,7 @@ resource "kubernetes_manifest" "letsencrypt_prod" {
       }
     }
   }
-  depends_on = [azurerm_kubernetes_cluster.aks_cluster]
+  depends_on = [helm_release.cert_manager]
 }
 
 resource "kubernetes_ingress_v1" "my_app_ingress" {
