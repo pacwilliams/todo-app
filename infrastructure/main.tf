@@ -542,3 +542,9 @@ data "kubernetes_service_v1" "grafana" {
     namespace = "monitoring"
   }
 }
+
+resource "local_file" "kubeconfig" {
+  content    = data.azurerm_key_vault_secret.aks_kubeconfig.value
+  filename   = "${path.module}/kubeconfig.yaml"
+  depends_on = [azurerm_key_vault_secret.aks_kubeconfig]
+}
