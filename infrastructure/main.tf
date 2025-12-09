@@ -3,6 +3,17 @@ resource "azurerm_resource_group" "rg" {
   name     = "ODL-candidate-sandbox-02-1986716"
 }
 
+# Management lock to prevent accidental deletion of resource group
+resource "azurerm_management_lock" "rg_lock" {
+  name       = "rg-delete-lock"
+  scope      = azurerm_resource_group.rg.id
+  lock_level = "CanNotDelete"
+  notes      = "Prevent accidental deletion of resource group"
+
+  # Ensure the lock is destroyed before the resource group
+  depends_on = [azurerm_resource_group.rg]
+}
+
 # Virtual Network
 resource "azurerm_virtual_network" "my_terraform_network" {
   name                = "${azurerm_resource_group.rg.name}-vnet"
@@ -69,6 +80,11 @@ resource "azurerm_network_security_group" "my_terraform_nsg" {
   }
 
 
+}
+
+resource "azurerm_subnet_network_security_group_association" "example" {
+  subnet_id                 = azurerm_subnet.subnet_2.id
+  network_security_group_id = azurerm_network_security_group.my_terraform_nsg.id
 }
 
 # Create network interface
@@ -194,6 +210,17 @@ resource "azurerm_container_registry" "acr" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "Basic"
+}
+
+# Management lock to prevent accidental deletion of resource group
+resource "azurerm_management_lock" "acr_lock" {
+  name       = "acr-delete-lock"
+  scope      = azurerm_container_registry.acr.id
+  lock_level = "CanNotDelete"
+  notes      = "Prevent accidental deletion of resource group"
+
+  # Ensure the lock is destroyed before the resource group
+  depends_on = [azurerm_container_registry.acr]
 }
 
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
@@ -356,5 +383,5 @@ service:
 EOF
   ]
 
-depends_on = [ helm_release.prometheus ]
+  depends_on = [helm_release.prometheus]
 }

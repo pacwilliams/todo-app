@@ -118,3 +118,24 @@ resource "azurerm_key_vault_secret" "grafana_pwd" {
   key_vault_id = azurerm_key_vault.kv.id
   depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
 }
+
+resource "azurerm_monitor_diagnostic_setting" "kv_logging" {
+  name                       = "kv-logging"
+  target_resource_id         = azurerm_key_vault.kv.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
+
+  # Enable Key Vault logs
+  enabled_log {
+    category = "AuditEvent"
+  }
+
+  enabled_log {
+    category = "AllLogs"
+  }
+
+  # Enable metrics
+  enabled_metric {
+    category = "AllMetrics"
+
+  }
+}
