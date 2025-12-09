@@ -21,3 +21,9 @@ variable "enable_manifests" {
   description = "Enable or disable the deployment of Kubernetes manifests."
   default     = true
 }
+
+variable "api_token" {
+  description = "API token for DNS provider or HPC cloud integration"
+  type        = string
+  sensitive   = true
+}

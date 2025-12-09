@@ -320,32 +320,52 @@ resource "helm_release" "cert_manager" {
   depends_on = [ azurerm_kubernetes_cluster.aks_cluster ]
 }
 
-resource "kubernetes_manifest" "letsencrypt_prod" {
-  count = var.enable_manifests ? 1 : 0
+resource "kubernetes_secret" "cloudflare_api_token" {
+  metadata {
+    name      = "cloudflare-api-token-secret"
+    namespace = "cert-manager"
+  }
 
+  data = {
+    "api-token" = var.api_token
+  }
+
+  type = "Opaque"
+
+  depends_on = [helm_release.cert_manager]
+}
+
+resource "kubernetes_manifest" "letsencrypt_dns01" {
   manifest = {
-    apiVersion = "cert-manager.io/v1"
-    kind       = "ClusterIssuer"
-    metadata = {
-      name = "letsencrypt-prod"
+    "apiVersion" = "cert-manager.io/v1"
+    "kind"       = "ClusterIssuer"
+    "metadata" = {
+      "name" = "letsencrypt-dns01"
     }
-    spec = {
-      acme = {
-        server = "https://acme-v02.api.letsencrypt.org/directory"
-        email  = "pacwilliams@hotmail.com"
-        privateKeySecretRef = {
-          name = "letsencrypt-prod"
+    "spec" = {
+      "acme" = {
+        "server" = "https://acme-v02.api.letsencrypt.org/directory"
+        "email"  = "pacwilliams@hotmail.com"
+        "privateKeySecretRef" = {
+          "name" = "letsencrypt-dns01-account-key"
         }
-        solvers = [{
-          http01 = {
-            ingress = {
-              class = "nginx"
+        "solvers" = [
+          {
+            "dns01" = {
+              "cloudflare" = {
+                "email"    = pacwilliams@hotmail.com
+                "apiTokenSecretRef" = {
+                  "name" = "cloudflare-api-token-secret"
+                  "key"  = "api-token"
+                }
+              }
             }
           }
-        }]
+        ]
       }
     }
   }
+
   depends_on = [helm_release.cert_manager]
 }
 
@@ -354,7 +374,7 @@ resource "kubernetes_ingress_v1" "my_app_ingress" {
     name      = "todo-ingress"
     namespace = "default"
     annotations = {
-      "cert-manager.io/cluster-issuer" = "letsencrypt-prod"
+      "cert-manager.io/cluster-issuer" = "letsencrypt-dns01"
     }
   }
 
