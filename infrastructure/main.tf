@@ -313,9 +313,9 @@ resource "helm_release" "cert_manager" {
 
   set = [
     {
-    name  = "installCRDs"
-    value = "true"
-  }
+      name  = "installCRDs"
+      value = "true"
+    }
   ]
 }
 
@@ -350,14 +350,14 @@ resource "kubernetes_ingress_v1" "my_app_ingress" {
     name      = "todo-ingress"
     namespace = "default"
     annotations = {
-      "kubernetes.io/ingress.class"       = "nginx"
-      "cert-manager.io/cluster-issuer"    = "letsencrypt-prod"
+      "kubernetes.io/ingress.class"    = "nginx"
+      "cert-manager.io/cluster-issuer" = "letsencrypt-prod"
     }
   }
 
   spec {
     tls {
-      hosts      = ["todo.pw-az-demo.com"]
+      hosts       = ["todo.pw-az-demo.com"]
       secret_name = "todo-tls"
     }
 
@@ -365,7 +365,7 @@ resource "kubernetes_ingress_v1" "my_app_ingress" {
       host = "todo.pw-az-demo.com"
       http {
         path {
-          path     = "/"
+          path      = "/"
           path_type = "Prefix"
           backend {
             service {
@@ -526,10 +526,10 @@ resource "grafana_data_source" "prometheus" {
 resource "grafana_dashboard" "k8s" {
   config_json = file("${path.module}/dashboards/6417_rev1.json")
 
-  depends_on = [ grafana_data_source.prometheus ]
+  depends_on = [grafana_data_source.prometheus]
 }
 
 resource "grafana_dashboard" "k8s2" {
   config_json = file("${path.module}/dashboards/15661_rev2.json")
-  depends_on = [ grafana_data_source.prometheus ]
+  depends_on  = [grafana_data_source.prometheus]
 }

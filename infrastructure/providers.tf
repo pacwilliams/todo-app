@@ -29,6 +29,10 @@ terraform {
       version = ">= 3.0.0"
     }
 
+    grafana = {
+      source  = "grafana/grafana"
+      version = "~>4.21.0"
+    }
   }
 }
 
@@ -58,7 +62,7 @@ provider "helm" {
 }
 
 provider "grafana" {
-  url  = "http://${helm_release.grafana.status[0].load_balancer_ingress[0].ip}:3000"
+  url           = "http://${helm_release.grafana.status[0].load_balancer_ingress[0].ip}:3000"
   auth_username = "admin"
   auth_password = random_password.grafana_pwd.result
 }
