@@ -525,8 +525,11 @@ resource "grafana_data_source" "prometheus" {
 
 resource "grafana_dashboard" "k8s" {
   config_json = file("${path.module}/dashboards/6417_rev1.json")
+
+  depends_on = [ grafana_data_source.prometheus ]
 }
 
 resource "grafana_dashboard" "k8s2" {
   config_json = file("${path.module}/dashboards/15661_rev2.json")
+  depends_on = [ grafana_data_source.prometheus ]
 }
