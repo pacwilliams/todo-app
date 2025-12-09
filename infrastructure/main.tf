@@ -511,14 +511,14 @@ EOF
 }
 
 resource "grafana_data_source" "prometheus" {
-  name   = "Prometheus"
-  type   = "prometheus"
-  url    = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+  name        = "Prometheus"
+  type        = "prometheus"
+  url         = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
   access_mode = "proxy"
 
-  json_data_encoded = {
+  json_data_encoded = jsonencode({
     httpMethod = "POST"
-  }
+  })
 
   depends_on = [helm_release.grafana, helm_release.prometheus]
 }
@@ -534,7 +534,7 @@ resource "grafana_dashboard" "k8s2" {
   depends_on  = [grafana_data_source.prometheus]
 }
 
-data "kubernetes_service" "grafana" {
+data "kubernetes_service_v1" "grafana" {
   metadata {
     name      = "grafana"
     namespace = "monitoring"
