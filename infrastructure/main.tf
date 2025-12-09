@@ -522,26 +522,41 @@ resource "grafana_data_source" "prometheus" {
     httpMethod = "POST"
   })
 
-  depends_on = [helm_release.grafana, helm_release.prometheus]
+  depends_on = [helm_release.grafana]
 }
 
 resource "grafana_dashboard" "k8s" {
   config_json = file("${path.module}/dashboards/6417_rev1.json")
 
-  depends_on = [grafana_data_source.prometheus]
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana]
 }
 
 resource "grafana_dashboard" "k8s2" {
   config_json = file("${path.module}/dashboards/15661_rev2.json")
-  depends_on  = [grafana_data_source.prometheus]
+  depends_on  = [helm_release.grafana, data.kubernetes_service_v1.grafana]
 }
 
 data "kubernetes_service_v1" "grafana" {
   metadata {
-    name      = "grafana"
-    namespace = "monitoring"
+    name      = helm_release.grafana.name
+    namespace = helm_release.grafana.namespace
   }
+  depends_on = [null_resource.wait_for_grafana]
 }
+
+resource "null_resource" "wait_for_grafana" {
+  provisioner "local-exec" {
+    command = <<EOT
+    until kubectl get svc grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}' | grep -qE '.+'; do
+      echo "Waiting for Grafana LoadBalancer IP..."
+      sleep 10
+    done
+    EOT
+  }
+
+  depends_on = [helm_release.grafana]
+}
+
 
 data "azurerm_key_vault_secret" "aks_kubeconfig" {
   name         = "aks-kubeconfig"

@@ -50,11 +50,7 @@ provider "kubernetes" {
   client_certificate     = base64decode(azurerm_kubernetes_cluster.aks_cluster.kube_config[0].client_certificate)
   client_key             = base64decode(azurerm_kubernetes_cluster.aks_cluster.kube_config[0].client_key)
   cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks_cluster.kube_config[0].cluster_ca_certificate)
-  config_path            = local_file.kubeconfig.filename
-  config_context         = "ODL-candidate-sandbox-02-1986716-aks"
-
-
-
+  token = azurerm_kubernetes_cluster.aks_cluster.kube_config[0].token
 }
 
 provider "helm" {
@@ -63,13 +59,15 @@ provider "helm" {
     client_certificate     = base64decode(azurerm_kubernetes_cluster.aks_cluster.kube_config[0].client_certificate)
     client_key             = base64decode(azurerm_kubernetes_cluster.aks_cluster.kube_config[0].client_key)
     cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks_cluster.kube_config[0].cluster_ca_certificate)
-    config_path            = local_file.kubeconfig.filename
-    config_context         = "ODL-candidate-sandbox-02-1986716-aks"
   }
 }
 
 provider "grafana" {
-  url  = "http://${data.kubernetes_service_v1.grafana.status[0].load_balancer[0].ingress[0].ip}:80"
+  alias = "main"
+    url = "http://${coalesce(
+    data.kubernetes_service_v1.grafana.status[0].load_balancer[0].ingress[0].ip,
+    data.kubernetes_service_v1.grafana.status[0].load_balancer[0].ingress[0].hostname
+  )}:3000"
   auth = "admin:${random_password.grafana_pwd.result}"
 }
 
