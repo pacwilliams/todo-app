@@ -50,7 +50,17 @@ provider "kubernetes" {
   client_certificate     = base64decode(azurerm_kubernetes_cluster.aks_cluster.kube_config[0].client_certificate)
   client_key             = base64decode(azurerm_kubernetes_cluster.aks_cluster.kube_config[0].client_key)
   cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks_cluster.kube_config[0].cluster_ca_certificate)
-  token = azurerm_kubernetes_cluster.aks_cluster.kube_config[0].token
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "az"
+    args        = [
+      "aks", "get-credentials",
+      "--resource-group", azurerm_kubernetes_cluster.aks_cluster.resource_group_name,
+      "--name", azurerm_kubernetes_cluster.aks_cluster.name,
+      "--overwrite-existing"
+    ]
+  }
+
 }
 
 provider "helm" {
