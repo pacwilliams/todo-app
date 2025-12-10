@@ -567,39 +567,24 @@ resource "helm_release" "grafana" {
   repository = "https://grafana.github.io/helm-charts"
   chart      = "grafana"
   namespace  = "monitoring"
-
-  set = [{
-    name  = "ingress.enabled"
-    value = "true"
-    }
-
-    , {
-      name  = "ingress.ingressClassName"
-      value = "nginx"
-    }
-
-    , {
-      name  = "ingress.hosts[0]"
-      value = "grafana.pw-az-demo.com"
-    }
-
-    , {
-      name  = "ingress.tls[0].hosts[0]"
-      value = "grafana.pw-az-demo.com"
-    }
-
-    , {
-      name  = "ingress.tls[0].secretName"
-      value = "wildcard-pw-az-demo-tls"
-
-  }]
+  create_namespace = false
 
   values = [
     <<EOF
 adminUser: "admin"
 adminPassword: "${random_password.grafana_pwd.result}"
 service:
-  type: LoadBalancer
+  type: ClusterIP
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+    - grafana.pw-az-demo.com
+  tls:
+    - hosts:
+        - grafana.pw-az-demo.com
+      secretName: wildcard-pw-az-demo-tls
+
 EOF
   ]
 
@@ -639,18 +624,5 @@ data "kubernetes_service_v1" "grafana" {
     name      = helm_release.grafana.name
     namespace = helm_release.grafana.namespace
   }
-  #depends_on = [null_resource.wait_for_grafana]
 }
 
-# resource "null_resource" "wait_for_grafana" {
-#   provisioner "local-exec" {
-#     command = <<EOT
-#     until kubectl get svc grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}' | grep -qE '.+'; do
-#       echo "Waiting for Grafana LoadBalancer IP..."
-#       sleep 10
-#     done
-#     EOT
-#   }
-
-#   depends_on = [helm_release.grafana]
-# }
