@@ -70,3 +70,6 @@ provider "grafana" {
   auth = "admin:${random_password.grafana_pwd.result}"
 }
 
+provider "cloudflare" {
+  api_token = var.api_token
+}
