@@ -244,7 +244,7 @@ data "azurerm_resources" "aks_resources" {
 
 locals {
   agentpool_nsgs = [
-    for r in data.azurerm_resources.aks_resources.resources : r.name
+    for r in data.azurerm_resources.aks_resources.resources : r
     if can(regex("^aks-agentpool.*-nsg$", r.name))
   ]
 }
