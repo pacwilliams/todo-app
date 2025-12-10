@@ -229,53 +229,6 @@ resource "azurerm_management_lock" "acr_lock" {
   depends_on = [azurerm_container_registry.acr]
 }
 
-data "azurerm_network_security_group" "aks_nsg" {
-  name                 = local.agentpool_nsgs[0].name
-  resource_group_name = data.azurerm_kubernetes_cluster.aks.node_resource_group
-}
-data "azurerm_kubernetes_cluster" "aks" {
-  name                = "ODL-candidate-sandbox-02-1986716-aks"
-  resource_group_name = "ODL-candidate-sandbox-02-1986716"
-}
-
-data "azurerm_resources" "aks_resources" {
-  resource_group_name = data.azurerm_kubernetes_cluster.aks.node_resource_group
-}
-
-locals {
-  agentpool_nsgs = [
-    for r in data.azurerm_resources.aks_resources.resources : r
-    if can(regex("^aks-agentpool.*-nsg$", r.name))
-  ]
-}
-
-output "agentpool_nsg_name" {
-  value = local.agentpool_nsgs[0].name
-}
-
-output "agentpool_nsg_id" {
-  value = local.agentpool_nsgs[0].id
-}
-
-# Add inbound HTTPS rule
-resource "azurerm_network_security_rule" "https" {
-  name                        = "Allow_HTTPS"
-  priority                    = 100
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "443"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = data.azurerm_kubernetes_cluster.aks.node_resource_group
-  network_security_group_name = local.agentpool_nsgs[0].name
-}
-
-resource "azurerm_subnet_network_security_group_association" "subnet1_nsg" {
-  subnet_id                 = azurerm_subnet.subnet_1.id
-  network_security_group_id = local.agentpool_nsgs[0].id
-}
 # AKS Cluster
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
   name                = "${azurerm_resource_group.rg.name}-aks"
