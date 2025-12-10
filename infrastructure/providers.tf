@@ -33,6 +33,9 @@ terraform {
       source  = "grafana/grafana"
       version = "~>4.21.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = ">=4.23.0"
   }
 }
 
@@ -68,4 +71,8 @@ provider "grafana" {
     data.kubernetes_service_v1.grafana.status[0].load_balancer[0].ingress[0].hostname
   )}:3000"
   auth = "admin:${random_password.grafana_pwd.result}"
+}
+
+provider "cloudflare" {
+  api_token = var.api_token
 }

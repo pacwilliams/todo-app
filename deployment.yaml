@@ -45,7 +45,7 @@ kind: Service
 metadata:
   name: todoapp
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
   - name: http
     port: 80
@@ -55,5 +55,32 @@ spec:
     targetPort: 8080
   selector:
     app: todoapp
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todo-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-dns01
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - todo.pw-az-demo.com
+    secretName: todo-tls
+  rules:
+  - host: todo.pw-az-demo.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: todoapp
+            port:
+              number: 80
+
 
 

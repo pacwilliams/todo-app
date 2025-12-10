@@ -280,6 +280,17 @@ resource "helm_release" "nginx_ingress" {
   depends_on = [ azurerm_kubernetes_cluster.aks_cluster ]
 }
 
+resource "cloudflare_record" "todo" {
+  zone_id = "pw-az-demo.com"
+  name    = "todo"
+  value   = helm_release.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+  type    = "A"
+  ttl     = 3600
+  proxied  = false
+
+  depends_on = [ helm_release.nginx_ingress ]
+}
+
 # Helm release for Cert-Manager
 resource "helm_release" "cert_manager" {
   name             = "cert-manager"
