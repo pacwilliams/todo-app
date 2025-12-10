@@ -31,6 +31,12 @@ resource "azurerm_subnet" "subnet_1" {
   service_endpoints    = ["Microsoft.Storage", "Microsoft.KeyVault"]
 }
 
+data "azurerm_subnet" "subnet_1" {
+  name                 = azurerm_subnet.subnet_1.name
+  virtual_network_name = azurerm_virtual_network.my_terraform_network.name
+  resource_group_name  = azurerm_resource_group.rg.name
+}
+
 resource "azurerm_subnet" "subnet_2" {
   name                            = "subnet-2"
   resource_group_name             = azurerm_resource_group.rg.name
@@ -104,7 +110,7 @@ resource "azurerm_network_interface" "my_terraform_nic" {
 # Connect the security group to the network interface
 resource "azurerm_network_interface_security_group_association" "example" {
   network_interface_id      = azurerm_network_interface.my_terraform_nic.id
-  network_security_group_id = azurerm_network_security_group.my_terraform_nsg.id
+  network_security_group_id = azurerm_network_security_group.subnet2_nsg.id
 }
 
 
@@ -300,10 +306,10 @@ resource "helm_release" "nginx_ingress" {
   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
 
-resource "cloudflare_record" "todo" {
+resource "cloudflare_dns_record" "todo" {
   zone_id = var.zone_id
   name    = "*"
-  value   = helm_release.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+  content = helm_release.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
   type    = "A"
   ttl     = 3600
   proxied = false
