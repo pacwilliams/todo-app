@@ -68,7 +68,7 @@ provider "helm" {
 provider "grafana" {
   alias = "main"
   url = coalesce(
-    "https://grafana.pw-az-demo.com",                # hardcoded preferred hostname
+    "https://grafana.pw-az-demo.com", # hardcoded preferred hostname
     "http://localhost:3000"
   )
   auth = "admin:${random_password.grafana_pwd.result}"
