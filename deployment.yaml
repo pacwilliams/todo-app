@@ -47,26 +47,9 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - port: 8080
+  - port: 80
+    targetPort: 8080
   selector:
     app: todoapp
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: todoapp-ingress
-# spec:
-#   ingressClassName: nginx
-#   rules:
-#   - host: todoapp.pwwizexercise.com
-#   - http:
-#       paths:
-#       - path: /
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: todoapp
-#             port:
-#               number: 8080
 
 

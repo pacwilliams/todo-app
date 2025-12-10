@@ -223,27 +223,7 @@ resource "azurerm_management_lock" "acr_lock" {
   depends_on = [azurerm_container_registry.acr]
 }
 
-resource "azurerm_public_ip" "aks_ingress_ip" {
-  name                = "aks-ingress-ip"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
-
-resource "azurerm_dns_zone" "aks_zone" {
-  name                = "pw-az-demo.com"
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_dns_a_record" "aks_dns" {
-  name                = "todo"
-  zone_name           = azurerm_dns_zone.aks_zone.name
-  resource_group_name = azurerm_resource_group.rg.name
-  ttl                 = 300
-  records             = [azurerm_public_ip.aks_ingress_ip.ip_address]
-}
-
+# AKS Cluster
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
   name                = "${azurerm_resource_group.rg.name}-aks"
   location            = azurerm_resource_group.rg.location
@@ -304,6 +284,17 @@ resource "helm_release" "nginx_ingress" {
   ]
 }
 
+# NGINX Ingress Controller
+resource "helm_release" "nginx_ingress" {
+  name       = "nginx-ingress"
+  repository = "https://kubernetes.github.io/ingress-nginx"
+  chart      = "ingress-nginx"
+  namespace  = "ingress-nginx"
+
+  create_namespace = true
+  version          = "4.10.0"
+}
+
 resource "helm_release" "cert_manager" {
   name             = "cert-manager"
   repository       = "https://charts.jetstack.io"
@@ -320,7 +311,7 @@ resource "helm_release" "cert_manager" {
   depends_on = [ azurerm_kubernetes_cluster.aks_cluster ]
 }
 
-resource "kubernetes_secret" "cloudflare_api_token" {
+resource "kubernetes_secret_v1" "cloudflare_api_token" {
   metadata {
     name      = "cloudflare-api-token-secret"
     namespace = "cert-manager"
