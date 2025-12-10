@@ -50,6 +50,7 @@ jobs:
             sleep 60
             terraform "${ACTION}" -auto-approve
           else
-          terraform "${ACTION}" -auto-approve
+            terraform "${ACTION}" -auto-approve
+          fi
         env:
           ACTION: ${{ inputs.action }}
