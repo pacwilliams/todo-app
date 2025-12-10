@@ -250,7 +250,7 @@ locals {
 }
 
 output "agentpool_nsg_name" {
-  value = local.agentpool_nsgs[0]
+  value = local.agentpool_nsgs[0].name
 }
 
 output "agentpool_nsg_id" {
@@ -269,7 +269,7 @@ resource "azurerm_network_security_rule" "https" {
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
   resource_group_name         = data.azurerm_kubernetes_cluster.aks.node_resource_group
-  network_security_group_name = local.agentpool_nsgs[0]
+  network_security_group_name = local.agentpool_nsgs[0].name
 }
 
 resource "azurerm_subnet_network_security_group_association" "subnet1_nsg" {

@@ -46,12 +46,12 @@ jobs:
           echo "Action is ${ACTION}"
           terraform init
           if [ "${ACTION}" = "apply" ]; then
-            terraform "${ACTION}" -target="azurerm_kubernetes_cluster.aks_cluster" -auto-approve 
-            sleep 60
-            terraform "${ACTION}" -target="helm_release.cert_manager" -auto-approve
-            sleep 60
-            terraform "${ACTION}" -target="helm_release.nginx_ingress" -auto-approve
-            sleep 60
+            #terraform "${ACTION}" -target="azurerm_kubernetes_cluster.aks_cluster" -auto-approve 
+            #sleep 60
+            #terraform "${ACTION}" -target="helm_release.cert_manager" -auto-approve
+            #sleep 60
+            #terraform "${ACTION}" -target="helm_release.nginx_ingress" -auto-approve
+            #sleep 60
             terraform "${ACTION}" -auto-approve
           else
             terraform "${ACTION}" -auto-approve
