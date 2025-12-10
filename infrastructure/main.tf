@@ -286,18 +286,18 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
 }
 
 resource "helm_release" "nginx_ingress" {
-  name       = "nginx-ingress"
-  repository = "https://kubernetes.github.io/ingress-nginx"
-  chart      = "ingress-nginx"
-  namespace  = "ingress-nginx"
+  name             = "nginx-ingress"
+  repository       = "https://kubernetes.github.io/ingress-nginx"
+  chart            = "ingress-nginx"
+  namespace        = "ingress-nginx"
   create_namespace = true
 
-    set = [{
+  set = [{
     name  = "controller.service.type"
     value = "LoadBalancer"
   }]
 
-  depends_on = [ azurerm_kubernetes_cluster.aks_cluster ]
+  depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
 
 resource "cloudflare_record" "todo" {
@@ -306,9 +306,9 @@ resource "cloudflare_record" "todo" {
   value   = helm_release.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
   type    = "A"
   ttl     = 3600
-  proxied  = false
+  proxied = false
 
-  depends_on = [ helm_release.nginx_ingress ]
+  depends_on = [helm_release.nginx_ingress]
 }
 
 # Helm release for Cert-Manager
@@ -325,7 +325,7 @@ resource "helm_release" "cert_manager" {
       value = "true"
     }
   ]
-  depends_on = [ azurerm_kubernetes_cluster.aks_cluster ]
+  depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
 
 resource "kubernetes_secret_v1" "cloudflare_api_token" {
@@ -361,7 +361,7 @@ resource "kubernetes_manifest" "letsencrypt_dns01" {
           {
             "dns01" = {
               "cloudflare" = {
-                "email"    = "pacwilliams@hotmail.com"
+                "email" = "pacwilliams@hotmail.com"
                 "apiTokenSecretRef" = {
                   "name" = "cloudflare-api-token-secret"
                   "key"  = "api-token"
@@ -579,17 +579,17 @@ resource "grafana_data_source" "prometheus" {
 }
 
 resource "grafana_dashboard" "k8s" {
-  provider = grafana.main
+  provider    = grafana.main
   config_json = file("${path.module}/dashboards/6417_rev1.json")
 
   depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_data_source.prometheus]
 }
 
 resource "grafana_dashboard" "k8s2" {
-  provider = grafana.main
+  provider    = grafana.main
   config_json = file("${path.module}/dashboards/15661_rev2.json")
 
-  depends_on  = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
 }
 
 data "kubernetes_service_v1" "grafana" {

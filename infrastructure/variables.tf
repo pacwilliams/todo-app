@@ -25,13 +25,13 @@ variable "enable_manifests" {
 variable "api_token" {
   description = "API token for DNS provider or HPC cloud integration"
   type        = string
-  default = null
+  default     = null
   sensitive   = true
 }
 
 variable "zone_id" {
   description = "The zone ID for the DNS provider"
   type        = string
-  default = null
-  sensitive = true
+  default     = null
+  sensitive   = true
 }
