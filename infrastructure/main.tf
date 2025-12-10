@@ -306,7 +306,7 @@ resource "helm_release" "nginx_ingress" {
   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
 
-data "kubernetes_service" "nginx_ingress" {
+data "kubernetes_service_v1" "nginx_ingress" {
   metadata {
     name      = "nginx-ingress-ingress-nginx-controller" # actual service name
     namespace = "ingress-nginx"
