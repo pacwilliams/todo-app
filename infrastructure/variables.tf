@@ -25,5 +25,6 @@ variable "enable_manifests" {
 variable "api_token" {
   description = "API token for DNS provider or HPC cloud integration"
   type        = string
+  default = null
   sensitive   = true
 }
