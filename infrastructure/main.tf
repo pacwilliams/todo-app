@@ -298,10 +298,16 @@ resource "helm_release" "nginx_ingress" {
   namespace        = "ingress-nginx"
   create_namespace = true
 
-  set = [{
+  set = [
+    {
     name  = "controller.service.type"
     value = "LoadBalancer"
-  }]
+  },
+  {
+    name  = "controller.extraArgs.default-ssl-certificate"
+    value = "ingress-nginx/wildcard-pw-az-demo-tls"
+  }
+  ]
 
   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
@@ -387,7 +393,7 @@ resource "kubernetes_manifest" "letsencrypt_dns01" {
     }
   }
 
-  depends_on = [helm_release.cert_manager]
+  depends_on = [helm_release.cert_manager, azurerm_kubernetes_cluster.aks_cluster]
 }
 
 resource "kubernetes_manifest" "wildcard_cert" {
