@@ -266,35 +266,21 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
 }
 
 resource "helm_release" "nginx_ingress" {
-  name             = "ingress-nginx"
-  repository       = "https://kubernetes.github.io/ingress-nginx"
-  chart            = "ingress-nginx"
-  namespace        = "ingress-basic"
-  create_namespace = true
-
-  set = [
-    {
-      name  = "controller.service.loadBalancerIP"
-      value = azurerm_public_ip.aks_ingress_ip.ip_address
-    },
-    {
-      name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-load-balancer-resource-group"
-      value = azurerm_resource_group.rg.name
-    }
-  ]
-}
-
-# NGINX Ingress Controller
-resource "helm_release" "nginx_ingress" {
   name       = "nginx-ingress"
   repository = "https://kubernetes.github.io/ingress-nginx"
   chart      = "ingress-nginx"
   namespace  = "ingress-nginx"
-
   create_namespace = true
-  version          = "4.10.0"
+
+    set = [{
+    name  = "controller.service.type"
+    value = "LoadBalancer"
+  }]
+
+  depends_on = [ azurerm_kubernetes_cluster.aks_cluster ]
 }
 
+# Helm release for Cert-Manager
 resource "helm_release" "cert_manager" {
   name             = "cert-manager"
   repository       = "https://charts.jetstack.io"
