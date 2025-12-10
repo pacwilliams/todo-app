@@ -245,7 +245,7 @@ resource "azurerm_network_security_rule" "https" {
   destination_port_range      = "443"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = azurerm_resource_group.rg.name
+  resource_group_name         = "mc_odl-candidate-sandbox-02-1986716_odl-candidate-sandbox-02-1986716-aks_eastus"
   network_security_group_name = data.azurerm_network_security_group.aks_nsg.name
 }
 
@@ -300,13 +300,13 @@ resource "helm_release" "nginx_ingress" {
 
   set = [
     {
-    name  = "controller.service.type"
-    value = "LoadBalancer"
-  },
-  {
-    name  = "controller.extraArgs.default-ssl-certificate"
-    value = "ingress-nginx/wildcard-pw-az-demo-tls"
-  }
+      name  = "controller.service.type"
+      value = "LoadBalancer"
+    },
+    {
+      name  = "controller.extraArgs.default-ssl-certificate"
+      value = "ingress-nginx/wildcard-pw-az-demo-tls"
+    }
   ]
 
   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
@@ -524,19 +524,6 @@ resource "azurerm_monitor_diagnostic_setting" "aks_diagnostics" {
   }
 }
 
-resource "azurerm_monitor_diagnostic_setting" "vm_diagnostics" {
-  name                       = "vm-diagnostics"
-  target_resource_id         = azurerm_linux_virtual_machine.my_terraform_vm.id
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
-
-
-  enabled_metric {
-    category = "AllMetrics"
-  }
-
-}
-
-
 # Prometheus Helm release
 resource "helm_release" "prometheus" {
   name       = "prometheus"
@@ -570,6 +557,32 @@ resource "helm_release" "grafana" {
   repository = "https://grafana.github.io/helm-charts"
   chart      = "grafana"
   namespace  = "monitoring"
+
+  set = [{
+    name  = "ingress.enabled"
+    value = "true"
+    }
+
+    , {
+      name  = "ingress.ingressClassName"
+      value = "nginx"
+    }
+
+    , {
+      name  = "ingress.hosts[0]"
+      value = "grafana.pw-az-demo.com"
+    }
+
+    , {
+      name  = "ingress.tls[0].hosts[0]"
+      value = "grafana.pw-az-demo.com"
+    }
+
+    , {
+      name  = "ingress.tls[0].secretName"
+      value = "wildcard-pw-az-demo-tls"
+
+  }]
 
   values = [
     <<EOF

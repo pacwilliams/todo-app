@@ -67,10 +67,10 @@ provider "helm" {
 
 provider "grafana" {
   alias = "main"
-  url = "http://${coalesce(
-    data.kubernetes_service_v1.grafana.status[0].load_balancer[0].ingress[0].ip,
-    data.kubernetes_service_v1.grafana.status[0].load_balancer[0].ingress[0].hostname
-  )}:3000"
+  url = coalesce(
+    "https://grafana.pw-az-demo.com",                # hardcoded preferred hostname
+    "http://localhost:3000"
+  )
   auth = "admin:${random_password.grafana_pwd.result}"
 }
 
