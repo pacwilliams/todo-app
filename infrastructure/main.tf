@@ -353,7 +353,7 @@ resource "kubernetes_manifest" "letsencrypt_dns01" {
           {
             "dns01" = {
               "cloudflare" = {
-                "email"    = pacwilliams@hotmail.com
+                "email"    = "pacwilliams@hotmail.com"
                 "apiTokenSecretRef" = {
                   "name" = "cloudflare-api-token-secret"
                   "key"  = "api-token"
