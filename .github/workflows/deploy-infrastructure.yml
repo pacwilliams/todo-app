@@ -43,6 +43,7 @@ jobs:
 
       - run: |
           cd ${{ github.workspace }}/infrastructure
+          echo "Action is ${ACTION}"
           terraform init
           if [ "${ACTION}" = "apply" ]; then
             terraform "${ACTION}" -target="azurerm_kubernetes_cluster.aks_cluster" -auto-approve 
