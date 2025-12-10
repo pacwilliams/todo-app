@@ -574,9 +574,3 @@ data "kubernetes_service_v1" "grafana" {
 
 #   depends_on = [helm_release.grafana]
 # }
-
-
-data "azurerm_key_vault_secret" "aks_kubeconfig" {
-  name         = "aks-kubeconfig"
-  key_vault_id = azurerm_key_vault.kv.id
-}
