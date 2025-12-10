@@ -357,42 +357,42 @@ resource "kubernetes_manifest" "letsencrypt_dns01" {
   depends_on = [helm_release.cert_manager]
 }
 
-resource "kubernetes_ingress_v1" "my_app_ingress" {
-  metadata {
-    name      = "todo-ingress"
-    namespace = "default"
-    annotations = {
-      "cert-manager.io/cluster-issuer" = "letsencrypt-dns01"
-    }
-  }
+# resource "kubernetes_ingress_v1" "my_app_ingress" {
+#   metadata {
+#     name      = "todo-ingress"
+#     namespace = "default"
+#     annotations = {
+#       "cert-manager.io/cluster-issuer" = "letsencrypt-dns01"
+#     }
+#   }
 
-  spec {
-    ingress_class_name = "nginx"
-    tls {
-      hosts       = ["todo.pw-az-demo.com"]
-      secret_name = "todo-tls"
-    }
+#   spec {
+#     ingress_class_name = "nginx"
+#     tls {
+#       hosts       = ["todo.pw-az-demo.com"]
+#       secret_name = "todo-tls"
+#     }
 
-    rule {
-      host = "todo.pw-az-demo.com"
-      http {
-        path {
-          path      = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = "todoapp"
-              port {
-                number = 8080
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  depends_on = [azurerm_kubernetes_cluster.aks_cluster]
-}
+#     rule {
+#       host = "todo.pw-az-demo.com"
+#       http {
+#         path {
+#           path      = "/"
+#           path_type = "Prefix"
+#           backend {
+#             service {
+#               name = "todoapp"
+#               port {
+#                 number = 8080
+#               }
+#             }
+#           }
+#         }
+#       }
+#     }
+#   }
+#   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
+# }
 
 resource "azurerm_role_assignment" "aks_network_contrib" {
   principal_id         = azurerm_kubernetes_cluster.aks_cluster.identity[0].principal_id
