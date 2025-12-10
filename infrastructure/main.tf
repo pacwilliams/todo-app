@@ -306,10 +306,17 @@ resource "helm_release" "nginx_ingress" {
   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
 
+data "kubernetes_service" "nginx_ingress" {
+  metadata {
+    name      = "nginx-ingress-ingress-nginx-controller" # actual service name
+    namespace = "ingress-nginx"
+  }
+}
+
 resource "cloudflare_dns_record" "todo" {
   zone_id = var.zone_id
   name    = "*"
-  content = helm_release.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+  content = data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
   type    = "A"
   ttl     = 3600
   proxied = false
