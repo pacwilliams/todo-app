@@ -229,14 +229,6 @@ resource "azurerm_management_lock" "acr_lock" {
   depends_on = [azurerm_container_registry.acr]
 }
 
-data "azurerm_network_security_group" "aks_nsg" {
-  name                 = "aks-agentpool-1986716-NSG"
-  resource_group_name = "mc_odl-candidate-sandbox-02-1986716_odl-candidate-sandbox-02-1986716-aks_eastus"
-}
-data "azurerm_kubernetes_cluster" "aks" {
-  name                = "ODL-candidate-sandbox-02-1986716-aks"
-  resource_group_name = "ODL-candidate-sandbox-02-1986716"
-}
 
 data "azurerm_resources" "aks_resources" {
   resource_group_name = data.azurerm_kubernetes_cluster.aks.node_resource_group
