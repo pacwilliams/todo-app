@@ -28,3 +28,10 @@ variable "api_token" {
   default = null
   sensitive   = true
 }
+
+variable "zone_id" {
+  description = "The zone ID for the DNS provider"
+  type        = string
+  default = null
+  sensitive = true
+}

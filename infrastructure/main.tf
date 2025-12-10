@@ -50,7 +50,7 @@ resource "azurerm_public_ip" "my_terraform_public_ip" {
 }
 
 # Create Network Security Group and rule
-resource "azurerm_network_security_group" "my_terraform_nsg" {
+resource "azurerm_network_security_group" "subnet2_nsg" {
   name                = "${azurerm_resource_group.rg.name}-NSG"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -82,9 +82,9 @@ resource "azurerm_network_security_group" "my_terraform_nsg" {
 
 }
 
-resource "azurerm_subnet_network_security_group_association" "example" {
+resource "azurerm_subnet_network_security_group_association" "subnet2_nsg" {
   subnet_id                 = azurerm_subnet.subnet_2.id
-  network_security_group_id = azurerm_network_security_group.my_terraform_nsg.id
+  network_security_group_id = azurerm_network_security_group.subnet2_nsg.id
 }
 
 # Create network interface
@@ -223,6 +223,26 @@ resource "azurerm_management_lock" "acr_lock" {
   depends_on = [azurerm_container_registry.acr]
 }
 
+data "azurerm_network_security_group" "aks_nsg" {
+  name                = basename(data.azurerm_subnet.subnet_1.network_security_group_id)
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# Add inbound HTTPS rule
+resource "azurerm_network_security_rule" "https" {
+  name                        = "Allow_HTTPS"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "443"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = data.azurerm_network_security_group.aks_nsg.name
+}
+
 # AKS Cluster
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
   name                = "${azurerm_resource_group.rg.name}-aks"
@@ -281,8 +301,8 @@ resource "helm_release" "nginx_ingress" {
 }
 
 resource "cloudflare_record" "todo" {
-  zone_id = "pw-az-demo.com"
-  name    = "todo"
+  zone_id = var.zone_id
+  name    = "*"
   value   = helm_release.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
   type    = "A"
   ttl     = 3600
@@ -357,6 +377,27 @@ resource "kubernetes_manifest" "letsencrypt_dns01" {
   depends_on = [helm_release.cert_manager]
 }
 
+resource "kubernetes_manifest" "wildcard_cert" {
+  manifest = {
+    apiVersion = "cert-manager.io/v1"
+    kind       = "Certificate"
+    metadata = {
+      name      = "wildcard-pw-az-demo"
+      namespace = "default"
+    }
+    spec = {
+      secretName = "wildcard-pw-az-demo-tls"
+      issuerRef = {
+        name = "letsencrypt-dns01"
+        kind = "ClusterIssuer"
+      }
+      dnsNames = [
+        "*.pw-az-demo.com",
+        "pw-az-demo.com"
+      ]
+    }
+  }
+}
 # resource "kubernetes_ingress_v1" "my_app_ingress" {
 #   metadata {
 #     name      = "todo-ingress"
@@ -541,14 +582,14 @@ resource "grafana_dashboard" "k8s" {
   provider = grafana.main
   config_json = file("${path.module}/dashboards/6417_rev1.json")
 
-  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana]
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_data_source.prometheus]
 }
 
 resource "grafana_dashboard" "k8s2" {
   provider = grafana.main
   config_json = file("${path.module}/dashboards/15661_rev2.json")
 
-  depends_on  = [helm_release.grafana, data.kubernetes_service_v1.grafana]
+  depends_on  = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
 }
 
 data "kubernetes_service_v1" "grafana" {

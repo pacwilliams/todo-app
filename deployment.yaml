@@ -69,7 +69,7 @@ spec:
   tls:
   - hosts:
     - todo.pw-az-demo.com
-    secretName: todo-tls
+    secretName: wildcard-pw-az-demo-tls
   rules:
   - host: todo.pw-az-demo.com
     http:
