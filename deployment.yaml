@@ -50,9 +50,6 @@ spec:
   - name: http
     port: 80
     targetPort: 8080
-  - name: https
-    port: 443
-    targetPort: 8080
   selector:
     app: todoapp
 ---
@@ -68,7 +65,8 @@ metadata:
 spec:
   tls:
   - hosts:
-    - todo.pw-az-demo.com
+      - todo.pw-az-demo.com
+    secretName: wildcard-pw-az-demo-tls
   rules:
   - host: todo.pw-az-demo.com
     http:

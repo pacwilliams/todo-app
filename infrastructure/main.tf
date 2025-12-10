@@ -376,8 +376,38 @@ resource "helm_release" "cert_manager" {
 
 resource "kubernetes_secret_v1" "cloudflare_api_token" {
   metadata {
-    name      = "cloudflare-api-token-secret"
+    name      = "wildcard-pw-az-demo-tls"
     namespace = "cert-manager"
+  }
+
+  data = {
+    "api-token" = var.api_token
+  }
+
+  type = "Opaque"
+
+  depends_on = [helm_release.cert_manager]
+}
+
+resource "kubernetes_secret_v1" "monitoring_tls_secret" {
+  metadata {
+    name      = "wildcard-pw-az-demo-tls"
+    namespace = "monitoring"
+  }
+
+  data = {
+    "api-token" = var.api_token
+  }
+
+  type = "Opaque"
+
+  depends_on = [helm_release.cert_manager]
+}
+
+resource "kubernetes_secret_v1" "ingress_nginx_token" {
+  metadata {
+    name      = "wildcard-pw-az-demo-tls"
+    namespace = "ingress-nginx"
   }
 
   data = {
@@ -409,7 +439,7 @@ resource "kubernetes_manifest" "letsencrypt_dns01" {
               "cloudflare" = {
                 "email" = "pacwilliams@hotmail.com"
                 "apiTokenSecretRef" = {
-                  "name" = "cloudflare-api-token-secret"
+                  "name" = "wildcard-pw-az-demo-tls"
                   "key"  = "api-token"
                 }
               }
