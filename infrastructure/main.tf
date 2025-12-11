@@ -600,6 +600,33 @@ EOF
   depends_on = [helm_release.prometheus]
 }
 
+resource "kubernetes_manifest" "grafana_cert" {
+  manifest = {
+    apiVersion = "cert-manager.io/v1"
+    kind       = "Certificate"
+    metadata = {
+      name      = "grafana-cert"
+      namespace = "monitoring"
+    }
+    spec = {
+      secretName = "wildcard-pw-az-demo-tls"
+      issuerRef = {
+        name = "letsencrypt-dns01"
+        kind = "ClusterIssuer"
+      }
+      dnsNames = [
+        "grafana.pw-az-demo.com"
+      ]
+    }
+  }
+
+  depends_on = [
+    helm_release.cert_manager,
+    kubernetes_manifest.letsencrypt_dns01,
+    helm_release.grafana
+  ]
+}
+
 resource "grafana_data_source" "prometheus" {
   name        = "Prometheus"
   type        = "prometheus"
