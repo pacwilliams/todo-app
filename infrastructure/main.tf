@@ -354,7 +354,7 @@ resource "kubernetes_secret_v1" "monitoring_tls_secret" {
 
   type = "Opaque"
 
-  depends_on = [helm_release.cert_manager]
+  depends_on = [helm_release.cert_manager,helm_release.prometheus]
 }
 
 resource "kubernetes_secret_v1" "ingress_nginx_token" {
