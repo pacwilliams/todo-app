@@ -304,7 +304,7 @@ resource "helm_release" "nginx_ingress" {
 
 data "kubernetes_service_v1" "nginx_ingress" {
   metadata {
-    name      = "ingress-nginx-controller" # actual service name
+    name      = "nginx-ingress-ingress-nginx-controller" # actual service name
     namespace = "ingress-nginx"
   }
 }
@@ -437,6 +437,7 @@ resource "kubernetes_manifest" "letsencrypt_dns01" {
 #     }
 #   }
 # }
+
 # resource "kubernetes_ingress_v1" "my_app_ingress" {
 #   metadata {
 #     name      = "todo-ingress"
