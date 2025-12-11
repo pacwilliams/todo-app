@@ -650,7 +650,28 @@ resource "grafana_dashboard" "k8s" {
 
 resource "grafana_dashboard" "k8s2" {
   provider    = grafana.main
-  config_json = file("${path.module}/dashboards/15661_rev2.json")
+  config_json = file("${path.module}/dashboards/6663_rev1.json")
+
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
+}
+
+resource "grafana_dashboard" "k8s3" {
+  provider    = grafana.main
+  config_json = file("${path.module}/dashboards/15758_rev44.json")
+
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
+}
+
+resource "grafana_dashboard" "k8s4" {
+  provider    = grafana.main
+  config_json = file("${path.module}/dashboards/15759_rev40.json")
+
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
+}
+
+resource "grafana_dashboard" "k8s4" {
+  provider    = grafana.main
+  config_json = file("${path.module}/dashboards/15761_rev20.json")
 
   depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
 }
