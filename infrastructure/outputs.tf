@@ -14,11 +14,3 @@ output "virtual_network_name" {
 output "public_ip_address" {
   value = azurerm_linux_virtual_machine.my_terraform_vm.public_ip_address
 }
-
-output "grafana_lb_ip" {
-  value = data.kubernetes_service_v1.grafana.status[0].load_balancer[0].ingress[0].ip
-}
-
-output "grafana_lb_hostname" {
-  value = data.kubernetes_service_v1.grafana.status[0].load_balancer[0].ingress[0].hostname
-}
