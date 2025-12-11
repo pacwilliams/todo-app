@@ -309,17 +309,16 @@ data "kubernetes_service_v1" "nginx_ingress" {
   }
 }
 
-resource "cloudflare_dns_record" "todo" {
-  count   = can(data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip)
-  zone_id = var.zone_id
-  name    = "*"
-  content = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
-  type    = "A"
-  ttl     = 3600
-  proxied = false
+# resource "cloudflare_dns_record" "todo" {
+#   zone_id = var.zone_id
+#   name    = "*"
+#   content = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+#   type    = "A"
+#   ttl     = 3600
+#   proxied = false
 
-  depends_on = [helm_release.nginx_ingress]
-}
+#   depends_on = [helm_release.nginx_ingress]
+# }
 
 # Helm release for Cert-Manager
 resource "helm_release" "cert_manager" {
