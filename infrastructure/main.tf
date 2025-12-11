@@ -286,6 +286,16 @@ resource "helm_release" "nginx_ingress" {
     {
       name  = "controller.extraArgs.default-ssl-certificate"
       value = "ingress-nginx/wildcard-pw-az-demo-tls"
+    },
+    {
+      # Azure-specific annotation to change probe path
+      name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/azure-load-balancer-health-probe-request-path"
+      value = "/healthz"
+    },
+    {
+      # Ingress-nginx config override so NGINX responds with 200 OK
+      name  = "controller.config.health-check-path"
+      value = "/healthz"
     }
   ]
 
@@ -294,7 +304,7 @@ resource "helm_release" "nginx_ingress" {
 
 data "kubernetes_service_v1" "nginx_ingress" {
   metadata {
-    name      = "nginx-ingress-ingress-nginx-controller" # actual service name
+    name      = "ingress-nginx-controller" # actual service name
     namespace = "ingress-nginx"
   }
 }
@@ -406,27 +416,27 @@ resource "kubernetes_manifest" "letsencrypt_dns01" {
   depends_on = [helm_release.cert_manager, azurerm_kubernetes_cluster.aks_cluster]
 }
 
-resource "kubernetes_manifest" "wildcard_cert" {
-  manifest = {
-    apiVersion = "cert-manager.io/v1"
-    kind       = "Certificate"
-    metadata = {
-      name      = "wildcard-pw-az-demo"
-      namespace = "default"
-    }
-    spec = {
-      secretName = "wildcard-pw-az-demo-tls"
-      issuerRef = {
-        name = "letsencrypt-dns01"
-        kind = "ClusterIssuer"
-      }
-      dnsNames = [
-        "*.pw-az-demo.com",
-        "pw-az-demo.com"
-      ]
-    }
-  }
-}
+# resource "kubernetes_manifest" "wildcard_cert" {
+#   manifest = {
+#     apiVersion = "cert-manager.io/v1"
+#     kind       = "Certificate"
+#     metadata = {
+#       name      = "wildcard-pw-az-demo"
+#       namespace = "default"
+#     }
+#     spec = {
+#       secretName = "wildcard-pw-az-demo-tls"
+#       issuerRef = {
+#         name = "letsencrypt-dns01"
+#         kind = "ClusterIssuer"
+#       }
+#       dnsNames = [
+#         "*.pw-az-demo.com",
+#         "pw-az-demo.com"
+#       ]
+#     }
+#   }
+# }
 # resource "kubernetes_ingress_v1" "my_app_ingress" {
 #   metadata {
 #     name      = "todo-ingress"
@@ -600,7 +610,7 @@ resource "grafana_data_source" "prometheus" {
     httpMethod = "POST"
   })
 
-  depends_on = [helm_release.grafana]
+  depends_on = [helm_release.grafana,helm_release.nginx_ingress]
 }
 
 resource "grafana_dashboard" "k8s" {
