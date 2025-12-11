@@ -669,7 +669,7 @@ resource "grafana_dashboard" "k8s4" {
   depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
 }
 
-resource "grafana_dashboard" "k8s4" {
+resource "grafana_dashboard" "k8s5" {
   provider    = grafana.main
   config_json = file("${path.module}/dashboards/15761_rev20.json")
 
