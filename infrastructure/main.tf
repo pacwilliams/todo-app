@@ -31,12 +31,6 @@ resource "azurerm_subnet" "subnet_1" {
   service_endpoints    = ["Microsoft.Storage", "Microsoft.KeyVault"]
 }
 
-data "azurerm_subnet" "subnet_1" {
-  name                 = azurerm_subnet.subnet_1.name
-  virtual_network_name = azurerm_virtual_network.my_terraform_network.name
-  resource_group_name  = azurerm_resource_group.rg.name
-}
-
 resource "azurerm_subnet" "subnet_2" {
   name                            = "subnet-2"
   resource_group_name             = azurerm_resource_group.rg.name
