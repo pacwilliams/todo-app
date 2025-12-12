@@ -271,6 +271,33 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   }
 }
 
+#Create Service Account
+resource "kubernetes_service_account" "todo_app" {
+  metadata {
+    name      = "todo-app-sa"
+    namespace = "default"
+  }
+}
+
+# Bind Role to Service Account
+resource "kubernetes_cluster_role_binding" "todo_app_admin" {
+  metadata {
+    name = "todo-app-admin-binding"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = kubernetes_service_account.todo_app.metadata[0].name
+    namespace = kubernetes_service_account.todo_app.metadata[0].namespace
+  }
+}
+
 resource "helm_release" "nginx_ingress" {
   name             = "nginx-ingress"
   repository       = "https://kubernetes.github.io/ingress-nginx"

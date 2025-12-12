@@ -17,6 +17,7 @@ spec:
       labels:
         app: todoapp
     spec:
+      serviceAccountName: todo-app-sa
       containers:
       - name: todoapp
         image: odl1986716.azurecr.io/todoapp:latest
