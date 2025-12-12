@@ -41,6 +41,7 @@ jobs:
       - name: Terraform Validate
         run: |
           pwd
+          terraform init
           terraform validate
 
       - name: Run TFLint
