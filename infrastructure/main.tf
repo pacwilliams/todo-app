@@ -272,7 +272,7 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
 }
 
 #Create Service Account
-resource "kubernetes_service_account" "todo_app" {
+resource "kubernetes_service_account_v1" "todo_app" {
   metadata {
     name      = "todo-app-sa"
     namespace = "default"
@@ -280,7 +280,7 @@ resource "kubernetes_service_account" "todo_app" {
 }
 
 # Bind Role to Service Account
-resource "kubernetes_cluster_role_binding" "todo_app_admin" {
+resource "kubernetes_cluster_role_binding_v1" "todo_app_admin" {
   metadata {
     name = "todo-app-admin-binding"
   }
@@ -293,8 +293,8 @@ resource "kubernetes_cluster_role_binding" "todo_app_admin" {
 
   subject {
     kind      = "ServiceAccount"
-    name      = kubernetes_service_account.todo_app.metadata[0].name
-    namespace = kubernetes_service_account.todo_app.metadata[0].namespace
+    name      = kubernetes_service_account_v1.todo_app.metadata[0].name
+    namespace = kubernetes_service_account_v1.todo_app.metadata[0].namespace
   }
 }
 
