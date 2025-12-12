@@ -665,7 +665,7 @@ resource "grafana_data_source" "prometheus" {
     httpMethod = "POST"
   })
 
-  depends_on = [helm_release.grafana,helm_release.nginx_ingress]
+  depends_on = [helm_release.grafana, helm_release.nginx_ingress]
 }
 
 resource "grafana_dashboard" "k8s" {
