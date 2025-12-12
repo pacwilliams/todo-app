@@ -10,6 +10,9 @@ jobs:
   scan:
     name: Scan Infrastructure as Code
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infrastructure
     permissions:
       contents: read
       packages: write
@@ -26,24 +29,28 @@ jobs:
           cli_config_credentials_token: ${{ secrets.TF_TOKEN}}
 
       - name: Install TFLint
-        uses: terraform-linters/setup-tflint@v1
+        uses: terraform-linters/setup-tflint@v6.2.1
+        with:
+          tflint_wrapper: true
 
       - name: Terraform Format Check
         run: |
-          cd ${{ github.workspace }}/infrastructure
-          ls -l
+          pwd
           terraform fmt -check -recursive
 
       - name: Terraform Validate
         run: |
-          cd ${{ github.workspace }}/infrastructure
+          pwd
           terraform validate
 
       - name: Run TFLint
         run: |
-          cd ${{ github.workspace }}/infrastructure
+          pwd
           tflint --init
+          sleep 5
           tflint
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Run Microsoft Security DevOps
         uses: microsoft/security-devops-action@latest
