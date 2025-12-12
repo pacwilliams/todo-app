@@ -3,7 +3,7 @@ name: Deploy Infrastructure
 on:
  pull_request:
     branches: ['main']
-    
+
  workflow_dispatch:
 
 jobs:
@@ -31,6 +31,7 @@ jobs:
       - name: Terraform Format Check
         run: |
           cd ${{ github.workspace }}/infrastructure
+          ls -l
           terraform fmt -check -recursive
 
       - name: Terraform Validate
@@ -50,7 +51,7 @@ jobs:
         with:
           tools: 'checkov'
         env:
-          GDN_CHECKOV_TARGETDIRECTORY: './infrastructure'
+          GDN_CHECKOV_TARGETDIRECTORY: '${{ github.workspace }}/infrastructure'
           GDN_CHECKOV_FRAMEWORKS: 'terraform'
           GDN_CHECKOV_DOWNLOADEXTERNALMODULES: 'false'
           GDN_CHECKOV_ENABLESECRETSCANALLFILES: 'true'

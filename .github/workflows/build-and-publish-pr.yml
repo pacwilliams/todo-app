@@ -33,6 +33,8 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           ignore-unfixed: true
+          scanners: 'vuln,secret,misconfig'
+          severity: 'CRITICAL,HIGH'
 
       - name: Upload SARIF file
         if: ${{ steps.scan.outputs.sarif != '' }}
