@@ -1,0 +1,63 @@
+name: Deploy Infrastructure
+
+on:
+ pull_request:
+    branches: ['main']
+    
+ workflow_dispatch:
+
+jobs:
+  scan:
+    name: Scan Infrastructure as Code
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_version: 1.14.1
+          cli_config_credentials_token: ${{ secrets.TF_TOKEN}}
+
+      - name: Install TFLint
+        uses: terraform-linters/setup-tflint@v1
+
+      - name: Terraform Format Check
+        run: |
+          cd ${{ github.workspace }}/infrastructure
+          terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        run: |
+          cd ${{ github.workspace }}/infrastructure
+          terraform validate
+
+      - name: Run TFLint
+        run: |
+          cd ${{ github.workspace }}/infrastructure
+          tflint --init
+          tflint
+
+      - name: Run Microsoft Security DevOps
+        uses: microsoft/security-devops-action@latest
+        id: msdo
+        with:
+          tools: 'checkov'
+        env:
+          GDN_CHECKOV_TARGETDIRECTORY: './infrastructure'
+          GDN_CHECKOV_FRAMEWORKS: 'terraform'
+          GDN_CHECKOV_DOWNLOADEXTERNALMODULES: 'false'
+          GDN_CHECKOV_ENABLESECRETSCANALLFILES: 'true'
+          GDN_CHECKOV_QUIET: 'true'
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@cf1bb45a277cb3c205638b2cd5c984db1c46a412
+        with:
+          sarif_file: ${{ steps.msdo.outputs.sarifFile }}
+

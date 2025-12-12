@@ -1,0 +1,44 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Build and Publish a Docker image
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: ['main']
+  #push:
+  #  branches: ['main']
+
+env:
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  container-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.1
+
+      - name: Build Docker image
+        run: docker build . -t todoapp:latest
+
+      # Scan image with Trivy
+      - name: Scan Docker image with Trivy
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: todoapp:latest
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          ignore-unfixed: true
+
+      - name: Upload SARIF file
+        if: ${{ steps.scan.outputs.sarif != '' }}
+        uses: github/codeql-action/upload-sarif@cf1bb45a277cb3c205638b2cd5c984db1c46a412
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+
+
