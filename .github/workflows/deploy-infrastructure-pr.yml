@@ -18,6 +18,7 @@ jobs:
       packages: write
       actions: read
       security-events: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -69,4 +70,9 @@ jobs:
         uses: github/codeql-action/upload-sarif@cf1bb45a277cb3c205638b2cd5c984db1c46a412
         with:
           sarif_file: ${{ steps.msdo.outputs.sarifFile }}
+
+      - name: Comment Trivy Results on PR
+        uses: marocchino/sticky-pull-request-comment@v2.9.4
+        with:
+          path: ${{ steps.msdo.outputs.sarifFile }}
 

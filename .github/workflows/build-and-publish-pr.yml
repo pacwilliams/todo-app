@@ -19,6 +19,9 @@ jobs:
   container-scan:
     name: Scan Docker Image in PR
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
     steps:
       - uses: actions/checkout@v6.0.1
 
@@ -31,17 +34,24 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: todoapp:latest
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          format: 'table'
+          output: 'trivy-results.txt'
           ignore-unfixed: true
           scanners: 'vuln,secret,misconfig'
           severity: 'CRITICAL,HIGH'
 
-      - name: Upload SARIF file
-        if: ${{ steps.scan.outputs.sarif != '' }}
-        uses: github/codeql-action/upload-sarif@cf1bb45a277cb3c205638b2cd5c984db1c46a412
+      - name: Comment Trivy Results on PR
+        uses: marocchino/sticky-pull-request-comment@v2.9.4
         with:
-          sarif_file: 'trivy-results.sarif'
+          path: trivy-results.txt
+
+      - name: Write PR Results to Summary
+        run: |
+          echo "## Trivy Scan Results (Table)" >> $GITHUB_STEP_SUMMARY
+          cat trivy-results.txt >> $GITHUB_STEP_SUMMARY
+
+
+
 
 
 
