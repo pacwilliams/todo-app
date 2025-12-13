@@ -1,4 +1,4 @@
-name: Deploy Infrastructure
+name: Infrastructure PR Scan
 
 on:
  pull_request:
