@@ -241,6 +241,13 @@ resource "azurerm_role_assignment" "vm_storage_blob_contributor" {
   principal_id         = azurerm_linux_virtual_machine.my_terraform_vm.identity[0].principal_id
 }
 
+resource "azurerm_role_assignment" "vm_contributor" {
+  scope                = azurerm_resource_group.rg.id
+  role_definition_name = "Virtual Machine Contributor"
+  principal_id         = azurerm_linux_virtual_machine.my_terraform_vm.identity[0].principal_id
+}
+
+# Create Azure Container Registry
 resource "azurerm_container_registry" "acr" {
   name                = "odl1986716"
   resource_group_name = azurerm_resource_group.rg.name
@@ -367,6 +374,7 @@ data "kubernetes_service_v1" "nginx_ingress" {
 }
 
 resource "cloudflare_dns_record" "todo" {
+  count = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip == null ? 0 : 1
   zone_id = var.zone_id
   name    = "*"
   content = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
