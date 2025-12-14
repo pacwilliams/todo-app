@@ -110,12 +110,48 @@ resource "azurerm_network_interface_security_group_association" "example" {
 
 # Create storage account for boot diagnostics
 resource "azurerm_storage_account" "sa" {
-  name                     = "odl1986716"
-  location                 = azurerm_resource_group.rg.location
-  resource_group_name      = azurerm_resource_group.rg.name
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
+  name                          = "odl1986716"
+  location                      = azurerm_resource_group.rg.location
+  resource_group_name           = azurerm_resource_group.rg.name
+  account_tier                  = "Standard"
+  access_tier                   = "Cold"
+  account_replication_type      = "LRS"
+  shared_access_key_enabled     = false
+  public_network_access_enabled = true
+  blob_properties {
+    delete_retention_policy {
+      days                     = 7
+      permanent_delete_enabled = true
+    }
+
+  }
+  network_rules {
+    default_action = "Allow"
+  }
 }
+resource "azurerm_storage_management_policy" "example" {
+  storage_account_id = azurerm_storage_account.sa.id
+
+  rule {
+    name    = "delete-backups"
+    enabled = true
+
+    filters {
+      blob_types   = ["blockBlob"]
+      prefix_match = ["mongodb-backups/"]
+    }
+
+    actions {
+      base_blob {
+
+        delete_after_days_since_creation_greater_than = 30 # keep for 30 days
+
+      }
+    }
+  }
+}
+
+
 resource "azurerm_storage_container" "backups" {
   name                  = "mongodb-backups"
   storage_account_id    = azurerm_storage_account.sa.id
@@ -289,6 +325,7 @@ resource "kubernetes_cluster_role_binding_v1" "todo_app_admin" {
     kind      = "ServiceAccount"
     name      = kubernetes_service_account_v1.todo_app.metadata[0].name
     namespace = kubernetes_service_account_v1.todo_app.metadata[0].namespace
+    api_group = "rbac.authorization.k8s.io"
   }
 }
 
