@@ -57,7 +57,7 @@ write_files:
       Description=Run MongoDB Backup Daily at 2AM
 
       [Timer]
-      OnCalendar=*-*-* 02:00:00
+      OnCalendar=*-*-* 07:00:00
       Persistent=true
 
       [Install]
