@@ -116,6 +116,7 @@ resource "azurerm_storage_account" "sa" {
   account_tier                  = "Standard"
   access_tier                   = "Cold"
   account_replication_type      = "LRS"
+  shared_access_key_enabled     = true
   public_network_access_enabled = true
   blob_properties {
     delete_retention_policy {
