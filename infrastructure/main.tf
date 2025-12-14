@@ -116,7 +116,6 @@ resource "azurerm_storage_account" "sa" {
   account_tier                  = "Standard"
   access_tier                   = "Cold"
   account_replication_type      = "LRS"
-  shared_access_key_enabled     = false
   public_network_access_enabled = true
   blob_properties {
     delete_retention_policy {
@@ -325,7 +324,6 @@ resource "kubernetes_cluster_role_binding_v1" "todo_app_admin" {
     kind      = "ServiceAccount"
     name      = kubernetes_service_account_v1.todo_app.metadata[0].name
     namespace = kubernetes_service_account_v1.todo_app.metadata[0].namespace
-    api_group = "rbac.authorization.k8s.io"
   }
 }
 
