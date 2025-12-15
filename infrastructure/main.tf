@@ -446,97 +446,38 @@ resource "kubernetes_secret_v1" "ingress_nginx_token" {
   depends_on = [helm_release.cert_manager]
 }
 
-resource "kubernetes_manifest" "letsencrypt_dns01" {
-  manifest = {
-    "apiVersion" = "cert-manager.io/v1"
-    "kind"       = "ClusterIssuer"
-    "metadata" = {
-      "name" = "letsencrypt-dns01"
-    }
-    "spec" = {
-      "acme" = {
-        "server" = "https://acme-v02.api.letsencrypt.org/directory"
-        "email"  = "pacwilliams@hotmail.com"
-        "privateKeySecretRef" = {
-          "name" = "letsencrypt-dns01-account-key"
-        }
-        "solvers" = [
-          {
-            "dns01" = {
-              "cloudflare" = {
-                "email" = "pacwilliams@hotmail.com"
-                "apiTokenSecretRef" = {
-                  "name" = "wildcard-pw-az-demo-tls"
-                  "key"  = "api-token"
-                }
-              }
-            }
-          }
-        ]
-      }
-    }
-  }
-
-  depends_on = [helm_release.cert_manager, azurerm_kubernetes_cluster.aks_cluster]
-}
-
-# resource "kubernetes_manifest" "wildcard_cert" {
+# resource "kubernetes_manifest" "letsencrypt_dns01" {
 #   manifest = {
-#     apiVersion = "cert-manager.io/v1"
-#     kind       = "Certificate"
-#     metadata = {
-#       name      = "wildcard-pw-az-demo"
-#       namespace = "default"
+#     "apiVersion" = "cert-manager.io/v1"
+#     "kind"       = "ClusterIssuer"
+#     "metadata" = {
+#       "name" = "letsencrypt-dns01"
 #     }
-#     spec = {
-#       secretName = "wildcard-pw-az-demo-tls"
-#       issuerRef = {
-#         name = "letsencrypt-dns01"
-#         kind = "ClusterIssuer"
-#       }
-#       dnsNames = [
-#         "*.pw-az-demo.com",
-#         "pw-az-demo.com"
-#       ]
-#     }
-#   }
-# }
-
-# resource "kubernetes_ingress_v1" "my_app_ingress" {
-#   metadata {
-#     name      = "todo-ingress"
-#     namespace = "default"
-#     annotations = {
-#       "cert-manager.io/cluster-issuer" = "letsencrypt-dns01"
-#     }
-#   }
-
-#   spec {
-#     ingress_class_name = "nginx"
-#     tls {
-#       hosts       = ["todo.pw-az-demo.com"]
-#       secret_name = "todo-tls"
-#     }
-
-#     rule {
-#       host = "todo.pw-az-demo.com"
-#       http {
-#         path {
-#           path      = "/"
-#           path_type = "Prefix"
-#           backend {
-#             service {
-#               name = "todoapp"
-#               port {
-#                 number = 8080
+#     "spec" = {
+#       "acme" = {
+#         "server" = "https://acme-v02.api.letsencrypt.org/directory"
+#         "email"  = "pacwilliams@hotmail.com"
+#         "privateKeySecretRef" = {
+#           "name" = "letsencrypt-dns01-account-key"
+#         }
+#         "solvers" = [
+#           {
+#             "dns01" = {
+#               "cloudflare" = {
+#                 "email" = "pacwilliams@hotmail.com"
+#                 "apiTokenSecretRef" = {
+#                   "name" = "wildcard-pw-az-demo-tls"
+#                   "key"  = "api-token"
+#                 }
 #               }
 #             }
 #           }
-#         }
+#         ]
 #       }
 #     }
 #   }
-#   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
+
+#   depends_on = [helm_release.cert_manager, azurerm_kubernetes_cluster.aks_cluster]
 # }
 
 resource "azurerm_role_assignment" "aks_network_contrib" {
