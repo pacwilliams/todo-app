@@ -38,6 +38,8 @@ jobs:
           output: 'trivy-results.txt'
           ignore-unfixed: true
           scanners: 'vuln,secret,misconfig'
+          vuln-type: 'os,library'
+          exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
       - name: Comment Trivy Results on PR
