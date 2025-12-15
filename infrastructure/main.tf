@@ -373,18 +373,18 @@ data "kubernetes_service_v1" "nginx_ingress" {
   }
 }
 
-# resource "cloudflare_dns_record" "todo" {
-#   zone_id = var.zone_id
-#   name    = "*"
-#   content = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
-#   type    = "A"
-#   ttl     = 3600
-#   proxied = false
+resource "cloudflare_dns_record" "todo" {
+  zone_id = var.zone_id
+  name    = "*"
+  content = data.kubernetes_service_v1.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+  type    = "A"
+  ttl     = 3600
+  proxied = false
 
-#   depends_on = [helm_release.nginx_ingress]
-# }
+  depends_on = [helm_release.nginx_ingress]
+}
 
-# Helm release for Cert-Manager
+#Helm release for Cert-Manager
 resource "helm_release" "cert_manager" {
   name             = "cert-manager"
   repository       = "https://charts.jetstack.io"
@@ -446,245 +446,245 @@ resource "kubernetes_secret_v1" "ingress_nginx_token" {
   depends_on = [helm_release.cert_manager]
 }
 
-# resource "kubernetes_manifest" "letsencrypt_dns01" {
-#   manifest = {
-#     "apiVersion" = "cert-manager.io/v1"
-#     "kind"       = "ClusterIssuer"
-#     "metadata" = {
-#       "name" = "letsencrypt-dns01"
-#     }
-#     "spec" = {
-#       "acme" = {
-#         "server" = "https://acme-v02.api.letsencrypt.org/directory"
-#         "email"  = "pacwilliams@hotmail.com"
-#         "privateKeySecretRef" = {
-#           "name" = "letsencrypt-dns01-account-key"
-#         }
-#         "solvers" = [
-#           {
-#             "dns01" = {
-#               "cloudflare" = {
-#                 "email" = "pacwilliams@hotmail.com"
-#                 "apiTokenSecretRef" = {
-#                   "name" = "wildcard-pw-az-demo-tls"
-#                   "key"  = "api-token"
-#                 }
-#               }
-#             }
-#           }
-#         ]
-#       }
-#     }
-#   }
+resource "kubernetes_manifest" "letsencrypt_dns01" {
+  manifest = {
+    "apiVersion" = "cert-manager.io/v1"
+    "kind"       = "ClusterIssuer"
+    "metadata" = {
+      "name" = "letsencrypt-dns01"
+    }
+    "spec" = {
+      "acme" = {
+        "server" = "https://acme-v02.api.letsencrypt.org/directory"
+        "email"  = "pacwilliams@hotmail.com"
+        "privateKeySecretRef" = {
+          "name" = "letsencrypt-dns01-account-key"
+        }
+        "solvers" = [
+          {
+            "dns01" = {
+              "cloudflare" = {
+                "email" = "pacwilliams@hotmail.com"
+                "apiTokenSecretRef" = {
+                  "name" = "wildcard-pw-az-demo-tls"
+                  "key"  = "api-token"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
 
-#   depends_on = [helm_release.cert_manager, azurerm_kubernetes_cluster.aks_cluster]
-# }
+  depends_on = [helm_release.cert_manager, azurerm_kubernetes_cluster.aks_cluster]
+}
 
-# resource "azurerm_role_assignment" "aks_network_contrib" {
-#   principal_id         = azurerm_kubernetes_cluster.aks_cluster.identity[0].principal_id
-#   role_definition_name = "Network Contributor"
-#   scope                = azurerm_resource_group.rg.id
-# }
+resource "azurerm_role_assignment" "aks_network_contrib" {
+  principal_id         = azurerm_kubernetes_cluster.aks_cluster.identity[0].principal_id
+  role_definition_name = "Network Contributor"
+  scope                = azurerm_resource_group.rg.id
+}
 
 
-# resource "azurerm_key_vault_secret" "aks_kubeconfig" {
-#   name         = "aks-kubeconfig"
-#   value        = azurerm_kubernetes_cluster.aks_cluster.kube_config_raw
-#   key_vault_id = azurerm_key_vault.kv.id
-#   depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
-# }
+resource "azurerm_key_vault_secret" "aks_kubeconfig" {
+  name         = "aks-kubeconfig"
+  value        = azurerm_kubernetes_cluster.aks_cluster.kube_config_raw
+  key_vault_id = azurerm_key_vault.kv.id
+  depends_on   = [azurerm_key_vault.kv, azurerm_role_assignment.sp_kv_secrets_user, azurerm_role_assignment.kv_sp_assignment]
+}
 
-# resource "azurerm_role_assignment" "aks_role" {
-#   principal_id                     = azurerm_kubernetes_cluster.aks_cluster.kubelet_identity[0].object_id
-#   role_definition_name             = "AcrPull"
-#   scope                            = azurerm_container_registry.acr.id
-#   skip_service_principal_aad_check = true
-# }
+resource "azurerm_role_assignment" "aks_role" {
+  principal_id                     = azurerm_kubernetes_cluster.aks_cluster.kubelet_identity[0].object_id
+  role_definition_name             = "AcrPull"
+  scope                            = azurerm_container_registry.acr.id
+  skip_service_principal_aad_check = true
+}
 
 # # Log Analytics Workspace
-# resource "azurerm_log_analytics_workspace" "law" {
-#   name                = "odl1986716-law"
-#   location            = azurerm_resource_group.rg.location
-#   resource_group_name = azurerm_resource_group.rg.name
-#   sku                 = "PerGB2018"
-#   retention_in_days   = 30
-# }
+resource "azurerm_log_analytics_workspace" "law" {
+  name                = "odl1986716-law"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
 
-# resource "azurerm_monitor_diagnostic_setting" "aks_diagnostics" {
-#   name                       = "aks-diagnostics"
-#   target_resource_id         = azurerm_kubernetes_cluster.aks_cluster.id
-#   log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
+resource "azurerm_monitor_diagnostic_setting" "aks_diagnostics" {
+  name                       = "aks-diagnostics"
+  target_resource_id         = azurerm_kubernetes_cluster.aks_cluster.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
 
-#   # Enable AKS audit logs
-#   enabled_log {
-#     category = "kube-audit"
-#   }
+  # Enable AKS audit logs
+  enabled_log {
+    category = "kube-audit"
+  }
 
-#   # Enable AKS audit admin logs
-#   enabled_log {
-#     category = "kube-audit-admin"
-#   }
+  # Enable AKS audit admin logs
+  enabled_log {
+    category = "kube-audit-admin"
+  }
 
-#   enabled_log {
-#     category = "kube-apiserver"
-#   }
-#   enabled_log {
-#     category = "kube-scheduler"
-#   }
-#   enabled_log {
-#     category = "guard"
-#   }
+  enabled_log {
+    category = "kube-apiserver"
+  }
+  enabled_log {
+    category = "kube-scheduler"
+  }
+  enabled_log {
+    category = "guard"
+  }
 
-#   enabled_log {
-#     category = "cluster-autoscaler"
-#   }
+  enabled_log {
+    category = "cluster-autoscaler"
+  }
 
 
-#   enabled_log {
-#     category = "cloud-controller-manager"
-#   }
-#   # You can also send metrics if needed
-#   enabled_metric {
-#     category = "AllMetrics"
+  enabled_log {
+    category = "cloud-controller-manager"
+  }
+  # You can also send metrics if needed
+  enabled_metric {
+    category = "AllMetrics"
 
-#   }
-# }
+  }
+}
 
-# # Prometheus Helm release
-# resource "helm_release" "prometheus" {
-#   name       = "prometheus"
-#   repository = "https://prometheus-community.github.io/helm-charts"
-#   chart      = "kube-prometheus-stack"
-#   namespace  = "monitoring"
+# Prometheus Helm release
+resource "helm_release" "prometheus" {
+  name       = "prometheus"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "kube-prometheus-stack"
+  namespace  = "monitoring"
 
-#   create_namespace = true
+  create_namespace = true
 
-#   values = [
-#     <<EOF
-# alertmanager:
-#   enabled: true
+  values = [
+    <<EOF
+alertmanager:
+  enabled: true
 
-# server:
-#   service:
-#     type: LoadBalancer
+server:
+  service:
+    type: LoadBalancer
 
-# kube-state-metrics:
-#   enabled: true
+kube-state-metrics:
+  enabled: true
 
-# nodeExporter:
-#   enabled: true
-# EOF
-#   ]
-# }
+nodeExporter:
+  enabled: true
+EOF
+  ]
+}
 
-# # Grafana Helm release
-# resource "helm_release" "grafana" {
-#   name       = "grafana"
-#   repository = "https://grafana.github.io/helm-charts"
-#   chart      = "grafana"
-#   namespace  = "monitoring"
-#   values = [
-#     <<EOF
-# adminUser: "admin"
-# adminPassword: "${random_password.grafana_pwd.result}"
-# service:
-#   type: ClusterIP
-# ingress:
-#   enabled: true
-#   ingressClassName: nginx
-#   hosts:
-#     - grafana.pw-az-demo.com
-#   tls:
-#     - hosts:
-#         - grafana.pw-az-demo.com
-#       secretName: wildcard-pw-az-demo-tls
+# Grafana Helm release
+resource "helm_release" "grafana" {
+  name       = "grafana"
+  repository = "https://grafana.github.io/helm-charts"
+  chart      = "grafana"
+  namespace  = "monitoring"
+  values = [
+    <<EOF
+adminUser: "admin"
+adminPassword: "${random_password.grafana_pwd.result}"
+service:
+  type: ClusterIP
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+    - grafana.pw-az-demo.com
+  tls:
+    - hosts:
+        - grafana.pw-az-demo.com
+      secretName: wildcard-pw-az-demo-tls
 
-# EOF
-#   ]
+EOF
+  ]
 
-#   depends_on = [helm_release.prometheus]
-# }
+  depends_on = [helm_release.prometheus]
+}
 
-# # resource "kubernetes_manifest" "grafana_cert" {
-# #   manifest = {
-# #     apiVersion = "cert-manager.io/v1"
-# #     kind       = "Certificate"
-# #     metadata = {
-# #       name      = "grafana-cert"
-# #       namespace = "monitoring"
-# #     }
-# #     spec = {
-# #       secretName = "wildcard-pw-az-demo-tls"
-# #       issuerRef = {
-# #         name = "letsencrypt-dns01"
-# #         kind = "ClusterIssuer"
-# #       }
-# #       dnsNames = [
-# #         "grafana.pw-az-demo.com"
-# #       ]
-# #     }
-# #   }
+resource "kubernetes_manifest" "grafana_cert" {
+  manifest = {
+    apiVersion = "cert-manager.io/v1"
+    kind       = "Certificate"
+    metadata = {
+      name      = "grafana-cert"
+      namespace = "monitoring"
+    }
+    spec = {
+      secretName = "wildcard-pw-az-demo-tls"
+      issuerRef = {
+        name = "letsencrypt-dns01"
+        kind = "ClusterIssuer"
+      }
+      dnsNames = [
+        "grafana.pw-az-demo.com"
+      ]
+    }
+  }
 
-# #   depends_on = [
-# #     helm_release.cert_manager,
-# #     kubernetes_manifest.letsencrypt_dns01,
-# #     helm_release.grafana
-# #   ]
-# # }
+  depends_on = [
+    helm_release.cert_manager,
+    kubernetes_manifest.letsencrypt_dns01,
+    helm_release.grafana
+  ]
+}
 
-# resource "grafana_data_source" "prometheus" {
-#   name        = "Prometheus"
-#   type        = "prometheus"
-#   provider    = grafana.main
-#   url         = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
-#   access_mode = "proxy"
+resource "grafana_data_source" "prometheus" {
+  name        = "Prometheus"
+  type        = "prometheus"
+  provider    = grafana.main
+  url         = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+  access_mode = "proxy"
 
-#   json_data_encoded = jsonencode({
-#     httpMethod = "POST"
-#   })
+  json_data_encoded = jsonencode({
+    httpMethod = "POST"
+  })
 
-#   depends_on = [helm_release.grafana, helm_release.nginx_ingress, kubernetes_manifest.grafana_cert]
-# }
+  depends_on = [helm_release.grafana, helm_release.nginx_ingress, kubernetes_manifest.grafana_cert]
+}
 
-# resource "grafana_dashboard" "k8s" {
-#   provider    = grafana.main
-#   config_json = file("${path.module}/dashboards/6417_rev1.json")
+resource "grafana_dashboard" "k8s" {
+  provider    = grafana.main
+  config_json = file("${path.module}/dashboards/6417_rev1.json")
 
-#   depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_data_source.prometheus]
-# }
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_data_source.prometheus]
+}
 
-# resource "grafana_dashboard" "k8s2" {
-#   provider    = grafana.main
-#   config_json = file("${path.module}/dashboards/6663_rev1.json")
+resource "grafana_dashboard" "k8s2" {
+  provider    = grafana.main
+  config_json = file("${path.module}/dashboards/6663_rev1.json")
 
-#   depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
-# }
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
+}
 
-# resource "grafana_dashboard" "k8s3" {
-#   provider    = grafana.main
-#   config_json = file("${path.module}/dashboards/15758_rev44.json")
+resource "grafana_dashboard" "k8s3" {
+  provider    = grafana.main
+  config_json = file("${path.module}/dashboards/15758_rev44.json")
 
-#   depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
-# }
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
+}
 
-# resource "grafana_dashboard" "k8s4" {
-#   provider    = grafana.main
-#   config_json = file("${path.module}/dashboards/15759_rev40.json")
+resource "grafana_dashboard" "k8s4" {
+  provider    = grafana.main
+  config_json = file("${path.module}/dashboards/15759_rev40.json")
 
-#   depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
-# }
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
+}
 
-# resource "grafana_dashboard" "k8s5" {
-#   provider    = grafana.main
-#   config_json = file("${path.module}/dashboards/15761_rev20.json")
+resource "grafana_dashboard" "k8s5" {
+  provider    = grafana.main
+  config_json = file("${path.module}/dashboards/15761_rev20.json")
 
-#   depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
-# }
+  depends_on = [helm_release.grafana, data.kubernetes_service_v1.grafana, grafana_dashboard.k8s]
+}
 
-# data "kubernetes_service_v1" "grafana" {
-#   metadata {
-#     name      = helm_release.grafana.name
-#     namespace = helm_release.grafana.namespace
-#   }
-# }
+data "kubernetes_service_v1" "grafana" {
+  metadata {
+    name      = helm_release.grafana.name
+    namespace = helm_release.grafana.namespace
+  }
+}
 
