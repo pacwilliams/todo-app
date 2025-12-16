@@ -43,11 +43,13 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Comment Trivy Results on PR
+        if: success() || failure()
         uses: marocchino/sticky-pull-request-comment@v2.9.4
         with:
           path: trivy-results.txt
 
       - name: Write PR Results to Summary
+        if: success() || failure()
         run: |
           echo "## Trivy Scan Results (Table)" >> $GITHUB_STEP_SUMMARY
           cat trivy-results.txt >> $GITHUB_STEP_SUMMARY
